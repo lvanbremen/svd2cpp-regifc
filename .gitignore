@@ -39,3 +39,12 @@
 
 # debug information files
 *.dwo
+
+# Python
+__pycache__
+
+# VSCode
+.vscode/.*
+
+# SVD2CPP
+generated
