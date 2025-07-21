@@ -1,10 +1,10 @@
 # svd2cpp
-Convert CMSIS System View Description files to a modern C++ interface with efficient data access functions
+Convert CMSIS System View Description files to a modern C++ register interface with efficient data access functions
 
 
 ## Introduction
 By default, ARM provides SVDConv to generate CMSIS-compliant device header files.
-While the simplicity and configurability of this tool is beautiful, all it does is generate POD structs and definitions, where the user is responsible for correctly accessing the registers.
+While the simplicity and configurability of this tool is beautiful, all it does is generate structs and definitions, where the user is responsible for correctly accessing the registers.
 Accessing registers in this way is error prone, leads to hard to read code, and the resulting binary is sometimes efficient at best.
 
 This svd2cpp converter utility tries to tackle all these problems, by instead converting the SVD to a modern C++ interface, which is easily optimized in perfect assembly.
@@ -38,20 +38,20 @@ The code to first enable this peripheral, and configure an address and number of
 ```
 void i2c_transmit(I2cInterface& i2c, std::uint8_t address, std::uint16_t length) {
     // Set the Peripheral Enable bit first to allow further access
-    i2c.cr.pe().set();
+    i2c.CR.PE().set();
 
     // Read-Modify-Write cycle to efficiently configure the required fields
-    auto cr = i2c.cr.read();    // Read register once
-    cr.sadd().mod(address);     // Modify address
-    cr.nbytes().mod(length);    // Modify number of bytes
-    cr.rd_wrn().clr();          // Clear RD_WRN for transmit (shorthand for cr.rd_wrn().mod(0))
-    cr.write();                 // Write result to register (shorthand for i2c.cr.write(cr))
+    i2c.CR.read()       // Read register once
+       .SADD(address)   // Modify address (shorthand for cr.SADD().mod(address))
+       .NBYTES(length)  // Modify number of bytes (shorthand for cr.NBYTES().mod(length))
+       .RD_WRN().clr()  // Clear RD_WRN for transmit (shorthand for cr.RD_WRN().mod(0))
+       .write();        // Write result to register (shorthand for i2c.cr.write(cr))
 }
 ```
 
 And thats it! Check out the paragraph 'efficiency' for the emitted assembly belonging to this interface and be convinced that this is both the most readable and most efficient way to access registers from now on.
 
-### Compared to POD interface
+### Compared to define interface
 Imagine the interface emitted by SVDConv (or check it out in the github repository of [ST](https://github.com/STMicroelectronics/cmsis-device-l5/blob/master/Include/stm32l552xx.h)).
 The equivalent code for that interface would be as follows.
 
@@ -72,15 +72,59 @@ void i2c_transmit(I2C_TypeDef& i2c, std::uint8_t address, std::uint16_t length) 
 The code is similar, but far from concise.
 You could use convenience methods to make it easier to understand (e.g., `reg_set()`, `reg_clr()`, `reg_mod()`), but you would never get around of the mess of passing the correct macro definitions to the function.
 
+### Compared to the bit field interface
+Alternatively, SVDConv can be used to generate structs with so-called 'bit fields'.
+Compared to the 'define' interface, 
+
+### Alternative calls
+Whenever multiple fields are to be modified, the explicit read-modify-write pattern in strongly recommended, as it will lead to the most efficient code.
+However, when only a single field is modified, it is usually simpler to use the direct 'volatile' interface.
+
+The following examples are all equivalent for modifying a single bit and will all emit a single read, single modify, and single write instruction (if possible):
+Note that the `set()` and `clr()` functions are only available for 'flag' (single bit) kind of fields, as they would be non-sensical for 'value' kind of fields.
+```
+i2c.CR.PE().set();
+i2c.CR.PE().rmw(1);  // rmw(), as this will incur a read, a modify, and a write
+i2c.CR.PE(1);
+
+i2c.CR.read().PE().set().write();
+i2c.CR.read().PE().mod(1).write();
+i2c.CR.read().PE(1).write();
+```
+
+Multiple modify calls can easily be chained as shown in the first example.
+Note, that chaining is intentionally only possible after a call to `read()`, as chaining RMW calls to a single register is inefficient.
+Instead of chaining, the 'accessor' (return value of `read()`) can be stored in a temporary.
+```
+auto cr = i2c.CR.read();
+cr.PE().clr();
+cr.write();
+```
+
+This is as efficient as using the chaining method, no difference.
+Storing the temporary may be used to interleave the calls with other code.
+Note, however, that this may hurt the optimizer, so should generally be avoided.
+Also, storing this 'accessor' type for longer than a scope is inefficient, instead, the register can be decayed to an `std::uint32_t` and passed to `read()` or `write()` later.
+```
+# Decay the value to its underlying type and write it back
+std::uint32_t raw = i2c.CR.read();
+i2c.CR.write(raw);
+
+# Optionally, turn it back into an accessor, to modify a value and finally write again
+i2c.CR.read(raw).PE(1).write();
+```
+
+
 ## Efficiency
 I hear you wondering, all those C++ function calls, that must be inefficient, right... right?
 Well, if you compile your code without optimizations (`-O0`), then yes.
 Also, if you barely do optimizations (`-Og`), then maybe.
 However, besides the use case of deep diving into a debug session (which you hopefully not need anymore with this concise interface), any real-world project would be compiled in `-O1` or more.
-Note that the assembly emitted by GCC in `-O1`, `-O2`, `-O3`, or `-Os` seems to be identical always, so the links will compile with `-O2`, but I invite you to find a set of compiler options to find a way to reject the arguments listed here, and file a bug report if you find sub-optimal code being emitted :).
+Note that the assembly emitted by GCC in `-O1`, `-O2`, `-O3`, or `-Os` seems to be identical always, so the links will compile with `-O2`, but I invite you to find a set of compiler options to find a way to reject the arguments listed here, and file a bug report if you find sub-optimal assembly being emitted :).
 
-So, lets put the example given above in [Compiler Explorer](https://godbolt.org/z/Td1djT544) and investigate the output.
-Don't read the code too much, the first 165 lines are just template code, and will normally be automatically generated by the tool (either SVDConv or svd2cpp) and placed in a separate header file never to be looked at (I challenge you to read all 20401 lines of the SVDConv output for the STM32L552 microcontroller).
+### Optimal assembly
+So, lets put the example given above in [Compiler Explorer](https://godbolt.org/z/4YT818xfz) and investigate the output.
+Don't read the code too much, the first 170 lines are just template code, and will normally be automatically generated by the tool (either SVDConv or svd2cpp) and placed in a separate header file never to be looked at (I challenge you to read all 20401 lines of the SVDConv output for the STM32L552 microcontroller).
 The interesting stuff happens in the `i2c_transmit` functions, overloaded for the old school interface and new svd2cpp interface.
 Note that both functions are identical to the compiler (but.. the new interface requires a C++ compiler, but hey, if you are one of those ancient lizards still stuck to C only, I would not have expected you would be reading all the way up to this point).
 
@@ -100,6 +144,7 @@ However, the assembly emitted for the 'old school' interface consists of a baffl
 I have tried other examples where GCC would emit the perfect assembly, however, randomly adding another 'modify' somewhere would mess it up again.
 GCC thus seems to be a hit or miss on emitting perfect assembly.
 
+### Clang
 Comparing with Clang, unfortunately, Compiler Explorer does not support the Cortex-M family at the time of writing.
 However, the same interface works for the Cortex-A family.
 Compiler Explorer supports both the ARMv7-A and ARMv8-A family.
@@ -115,6 +160,20 @@ Thus, both compilers seem to mess up on a case to case basis.
 Please do note that this is not a case against the compilers optimizations, optimizations are hard!
 I would not be surprised if you could find a case where the old interface is faster (I challenge you!), since I have not exhausted the complete exploration space.
 The point is, efficiency is no reason to NOT use svd2cpp, as it seems to be the most efficient in any case.
+
+TODO: note that clang seems to not optimize away the chain-call functions, so these are disabled for the clang compiler...
+
+### Bit field interface
+I hear you asking, and I was wondering as well, the bit field interface should be easy to optimize by GCC/Clang, right?
+Well, lo and behold, the [bit field](https://godbolt.org/z/fohGGcGsn) interface in compiler explorer.
+Both clang and GCC emit horrible assembly for this interface.
+So, although it is much more readable than the define interface, it should not be used when efficiency is important.
+Additionally, I have not seen any manufacturer provide the bit field interface out of the box, and if you go and manually export using SVDConv.exe, why not go the extra mile and take this superior C++ interface instead?
+
+## Target platform
+Currently, the primary target platform for this library is the Cortex-M processor.
+It will probably work on other targets as well, and likely emit perfect assembly, but this has not been thoroughly tested.
+Please do let me know if you use it on any other platform, so I can create a list of supported architectures.
 
 ## Usage
 Of course, a good and easy interface would be worthless if it weren't easy to set up.
