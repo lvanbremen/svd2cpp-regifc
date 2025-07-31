@@ -33,10 +33,10 @@ This peripheral has a Configuration Register (CR), which has the following field
  * NBYTES: Number of bytes to communicate
  * PE: Peripheral Enable
 
-The code to first enable this peripheral, and configure an address and number of bytes to transmit would look as follows:
+The code to first enable this peripheral, configure an address and number of bytes to transmit, and finally reading back the number of bytes would look as follows:
 
 ```
-void i2c_transmit(I2cInterface& i2c, std::uint8_t address, std::uint16_t length) {
+std::uint32_t i2c_transmit(I2cInterface& i2c, std::uint8_t address, std::uint16_t length) {
     // Set the Peripheral Enable bit first to allow further access
     i2c.CR.PE().set();
 
@@ -44,8 +44,11 @@ void i2c_transmit(I2cInterface& i2c, std::uint8_t address, std::uint16_t length)
     i2c.CR.read()       // Read register once
        .SADD(address)   // Modify address (shorthand for cr.SADD().mod(address))
        .NBYTES(length)  // Modify number of bytes (shorthand for cr.NBYTES().mod(length))
-       .RD_WRN().clr()  // Clear RD_WRN for transmit (shorthand for cr.RD_WRN().mod(0))
+       .RD_WRN().clr()  // Clear RD_WRN for transmit (explicit way of writing RD_WRN(0))
        .write();        // Write result to register (shorthand for i2c.cr.write(cr))
+
+    // Retrieve the SADD value
+    return i2c.CR.NBYTES();
 }
 ```
 
@@ -56,9 +59,9 @@ Imagine the interface emitted by SVDConv (or check it out in the github reposito
 The equivalent code for that interface would be as follows.
 
 ```
-void i2c_transmit(I2C_TypeDef& i2c, std::uint8_t address, std::uint16_t length) {
+std::uint32_t i2c_transmit(I2C_TypeDef& i2c, std::uint8_t address, std::uint16_t length) {
     // Set the Peripheral Enable bit first to allow further access
-    i2c.CR |= I2C_CR_SADD;
+    i2c.CR |= I2C_CR_PE;
 
     // Read-Modify-Write cycle to efficiently configure the required fields
     auto cr = i2c.CR;                                                                       // Read register once
@@ -66,6 +69,9 @@ void i2c_transmit(I2C_TypeDef& i2c, std::uint8_t address, std::uint16_t length) 
     cr = (cr & ~I2C_CR_NBYTES_Msk) | ((length << I2C_CR_NBYTES_Pos) & I2C_CR_NBYTES_Msk);   // Modify number of bytes
     cr &= ~I2C_CR_RD_WRN;                                                                   // Clear RD_WRN for transmit
     i2c.CR = cr;                                                                            // Write result to register
+
+    // Retrieve the SADD value
+    return (i2c.CR & I2C_CR_NBYTES_Msk) >> I2C_CR_NBYTES_Pos;
 }
 ```
 
@@ -81,11 +87,10 @@ Whenever multiple fields are to be modified, the explicit read-modify-write patt
 However, when only a single field is modified, it is usually simpler to use the direct 'volatile' interface.
 
 The following examples are all equivalent for modifying a single bit and will all emit a single read, single modify, and single write instruction (if possible):
-Note that the `set()` and `clr()` functions are only available for 'flag' (single bit) kind of fields, as they would be non-sensical for 'value' kind of fields.
 ```
 i2c.CR.PE().set();
-i2c.CR.PE().rmw(1);  // rmw(), as this will incur a read, a modify, and a write
-i2c.CR.PE(1);
+i2c.CR.PE().rmw(1);  // need to explicitly write rmw(), as no accessor is used, this will incur a read, a modify, and a write
+// i2c.CR.PE(1) is intentionally not available, it would hide the RMW behavior
 
 i2c.CR.read().PE().set().write();
 i2c.CR.read().PE().mod(1).write();
@@ -97,7 +102,9 @@ Note, that chaining is intentionally only possible after a call to `read()`, as 
 Instead of chaining, the 'accessor' (return value of `read()`) can be stored in a temporary.
 ```
 auto cr = i2c.CR.read();
-cr.PE().clr();
+cr.SADD(address);
+cr.NBYTES(length);
+cr.RD_WRN().clr();
 cr.write();
 ```
 
@@ -114,6 +121,18 @@ i2c.CR.write(raw);
 i2c.CR.read(raw).PE(1).write();
 ```
 
+Reading a single field is as simple as assigning it to any integral value:
+```
+std::uint8_t nbytes1 = i2c.CR.NBYTES();     // Explicitly choose value type
+auto nbytes2 = i2c.CR.NBYTES().get();       // Or automatically get() the value, which deduces the underlying register type
+// std::uint8_t sadd1 = i2c.CR.SADD();      // <- this will cause an assertion, SADD is 10 bits wide and does not fit in an 8 bit value (you could explicitly cast it to a uint8_t if really desired, just implicit casts are disabled)
+// auto sadd2 = i2c.CR.SADD();              // <- this should be avoided, as it assigns the struct instead of the underlying value, which may cause weird behavior
+
+bool flag1 = i2c.CR.RD_WRN();               // Flags can be assigned to a boolean
+auto flag2 = i2c.CR.RD_WRN().get();         // Calling get() for a flag auto-deduces a boolean type
+// bool no_flag = i2c.CR.SADD();            // <- this will cause an assertion, only fields of width 1 can be assigned to 
+```
+
 
 ## Efficiency
 I hear you wondering, all those C++ function calls, that must be inefficient, right... right?
@@ -123,8 +142,8 @@ However, besides the use case of deep diving into a debug session (which you hop
 Note that the assembly emitted by GCC in `-O1`, `-O2`, `-O3`, or `-Os` seems to be identical always, so the links will compile with `-O2`, but I invite you to find a set of compiler options to find a way to reject the arguments listed here, and file a bug report if you find sub-optimal assembly being emitted :).
 
 ### Optimal assembly
-So, lets put the example given above in [Compiler Explorer](https://godbolt.org/z/4YT818xfz) and investigate the output.
-Don't read the code too much, the first 170 lines are just template code, and will normally be automatically generated by the tool (either SVDConv or svd2cpp) and placed in a separate header file never to be looked at (I challenge you to read all 20401 lines of the SVDConv output for the STM32L552 microcontroller).
+So, lets put the example given above in [Compiler Explorer](https://godbolt.org/z/YKeE5fE1n) and investigate the output.
+Don't read the code too much, the first 237 lines are just template code, and will normally be automatically generated by the tool (either SVDConv or svd2cpp) and placed in a separate header file never to be looked at (I challenge you to read all 20401 lines of the SVDConv output for the STM32L552 microcontroller).
 The interesting stuff happens in the `i2c_transmit` functions, overloaded for the old school interface and new svd2cpp interface.
 Note that both functions are identical to the compiler (but.. the new interface requires a C++ compiler, but hey, if you are one of those ancient lizards still stuck to C only, I would not have expected you would be reading all the way up to this point).
 
@@ -152,7 +171,7 @@ Switching the target is as simple as selecting another compiler.
 In both thumb and non-thumb mode and both targets, the assembly between the two interfaces is identical, and thus optimal for both.
 
 However.... I also have found an example where clang messes up.
-See this new compiler explorer example for [clang](https://godbolt.org/z/eM9h85E1x).
+See this new compiler explorer example for [clang](https://godbolt.org/z/s6eP5xx7v).
 Here, a RMMW is performed, thus optimal would be to have 4 instructions.
 But clang emits a total of 6, where the new svd2cpp interface emits the correct 4 instructions.
 
