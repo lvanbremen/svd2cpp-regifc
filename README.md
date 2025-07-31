@@ -41,11 +41,11 @@ std::uint32_t i2c_transmit(I2cInterface& i2c, std::uint8_t address, std::uint16_
     i2c.CR.PE().set();
 
     // Read-Modify-Write cycle to efficiently configure the required fields
-    i2c.CR.read()       // Read register once
-       .SADD(address)   // Modify address (shorthand for cr.SADD().mod(address))
-       .NBYTES(length)  // Modify number of bytes (shorthand for cr.NBYTES().mod(length))
-       .RD_WRN().clr()  // Clear RD_WRN for transmit (explicit way of writing RD_WRN(0))
-       .write();        // Write result to register (shorthand for i2c.cr.write(cr))
+    i2c.CR.read()          // Read register once
+          .SADD(address)   // Modify address (shorthand for cr.SADD().mod(address))
+          .NBYTES(length)  // Modify number of bytes (shorthand for cr.NBYTES().mod(length))
+          .RD_WRN().clr()  // Clear RD_WRN for transmit (explicit way of writing RD_WRN(0))
+          .write();        // Write result to register (shorthand for i2c.cr.write(cr))
 
     // Retrieve the SADD value
     return i2c.CR.NBYTES();
@@ -132,6 +132,17 @@ bool flag1 = i2c.CR.RD_WRN();               // Flags can be assigned to a boolea
 auto flag2 = i2c.CR.RD_WRN().get();         // Calling get() for a flag auto-deduces a boolean type
 // bool no_flag = i2c.CR.SADD();            // <- this will cause an assertion, only fields of width 1 can be assigned to 
 ```
+
+Instead of reading the register, it is also possible to initialize an 'accessor' with a default value.
+Specifically, the `init()` function can be called with an argument to start, or no argument to start with the 'default' value as defined in the SVD file.
+This can be particularly useful for write-only fields (missing the `read()` function), for which multiple values are written:
+```
+i2c.CR.init(0)
+      .PE().set()
+      .SADD(4)
+      .write()
+```
+
 
 
 ## Efficiency

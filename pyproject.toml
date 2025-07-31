@@ -5,6 +5,5 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "svd2json>=0.1.6",
-    "svd2py>=1.0.2",
+    "cmsis-svd>=0.6",
 ]
