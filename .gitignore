@@ -42,3 +42,6 @@
 
 # VSCode
 .vscode/.*
+
+# SVD2CPP
+generated

@@ -6,21 +6,25 @@
 #     WRITE_ONCE = 'writeOnce'
 #     READ_WRITE_ONCE = 'read-writeOnce'
 
-if __name__ == "__main__":
+def convert(svd_xml):
     from cmsis_svd import SVDParser
 
-    parser = SVDParser.for_xml_file('STM32U595.svd')
+    print(f'Parsing SVD file: {svd_xml}...')
+    parser = SVDParser.for_xml_file(svd_xml)
     device = parser.get_device().to_dict()
-    print(device['name'], device['width'])
 
-    groups = {}
+    grouped_peripherals = {}
     for peripheral in device['peripherals']:
-        if peripheral['group_name'] not in groups:
-            groups[peripheral['group_name']] = [peripheral]
+        if peripheral['group_name'] not in grouped_peripherals:
+            grouped_peripherals[peripheral['group_name']] = [peripheral]
         else:
-            groups[peripheral['group_name']].append(peripheral)
+            grouped_peripherals[peripheral['group_name']].append(peripheral)
 
-    for group_name, peripherals in groups.items():
+    # show(grouped_peripherals)
+    generate(device, grouped_peripherals)
+
+def show(grouped_peripherals):
+    for group_name, peripherals in grouped_peripherals.items():
         print(f'Group: {group_name}')
         for idx, peripheral in enumerate(peripherals):
             # Only generate the registers once per group
@@ -45,4 +49,55 @@ if __name__ == "__main__":
 
             # List all peripherals belonging to this group
             print('  ', peripheral['name'], peripheral['base_address'])
+
+def generate(device, grouped_peripherals):
+    import os
+    import jinja2
+
+    template_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'template')
+
+    env = jinja2.Environment(
+        loader = jinja2.FileSystemLoader(template_dir),
+        autoescape = jinja2.select_autoescape(),
+        trim_blocks = True,
+        lstrip_blocks = True,
+        keep_trailing_newline=True,
+        undefined=jinja2.StrictUndefined
+    )
+
+    parameters = {
+        'device': {
+            'name': device['name'],
+            'width': device['width'],
+        },
+        'groups': grouped_peripherals,
+    }
+
+    generate_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'generated')
+    if not os.path.exists(generate_dir):
+        print(f'Creating directory {generate_dir}')
+        os.makedirs(generate_dir)
+
+    for template_file in os.listdir(template_dir):
+        generated_file = os.path.join(generate_dir, os.path.basename(template_file.removesuffix('.jinja').replace('device', device['name'])))
+        print(f'Generating {generated_file}...')
+        rendered = env.get_template(os.path.basename(template_file)).render(parameters)
+        with open(generated_file, 'w') as file:
+            file.write(rendered)
+
+
+if __name__ == "__main__":
+    import argparse
+    
+    parser = argparse.ArgumentParser(prog='svd2cpp', description='Convert CMSIS SVD to modern C++ interfaces')
+    parser.add_argument('svd_file', type=str, help='Path to the SVD file to convert')
+    args = parser.parse_args()
+
+    print('Converting SVD file:', args.svd_file)
+
+    convert(args.svd_file)
+
+    print()
+    print('All done!')
+
                 

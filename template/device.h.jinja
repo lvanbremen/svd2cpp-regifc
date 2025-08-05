@@ -3,34 +3,9 @@
 #include <type_traits>
 #include <limits>
 
-////////////////////////////////////////
-//     Example 'define interface'     //
-////////////////////////////////////////
-#define __IO volatile
-
-typedef struct {
-    __IO uint32_t CR;
-} I2C_TypeDef;
-
-/******************  Bit definition for I2C_CR register  **********************/
-#define I2C_CR_SADD_Pos              (0U)
-#define I2C_CR_SADD_Msk              (0x3FFUL << I2C_CR_SADD_Pos)              /*!< 0x000003FF */
-#define I2C_CR_SADD                  I2C_CR_SADD_Msk                           /*!< Slave address (master mode) */
-#define I2C_CR_RD_WRN_Pos            (10U)
-#define I2C_CR_RD_WRN_Msk            (0x1UL << I2C_CR_RD_WRN_Pos)              /*!< 0x00000400 */
-#define I2C_CR_RD_WRN                I2C_CR_RD_WRN_Msk                         /*!< Transfer direction (master mode) */
-#define I2C_CR_NBYTES_Pos            (16U)
-#define I2C_CR_NBYTES_Msk            (0xFFUL << I2C_CR_NBYTES_Pos)             /*!< 0x00FF0000 */
-#define I2C_CR_NBYTES                I2C_CR_NBYTES_Msk                         /*!< Number of bytes */
-#define I2C_CR_PE_Pos                (31U)
-#define I2C_CR_PE_Msk                (0x1UL << I2C_CR_PE_Pos)                  /*!< 0x80000000 */
-#define I2C_CR_PE                    I2C_CR_PE_Msk                             /*!< Peripheral enable */
-
-////////////////////////////////////////
-//  Example 'C++ accessor functions'  //
-////////////////////////////////////////
-// Please note that all below code would normally be auto-generated and there would be no need to look at it.
-//
+///////////////////////////////////////////////////////////////////////////////
+// Base struct definitions                                                   //
+///////////////////////////////////////////////////////////////////////////////
 template <typename Treg, typename Tval, unsigned int Offset, unsigned int Width>
 struct BaseField {
     // Define some useful field attributes
@@ -165,7 +140,7 @@ struct StableField : public BaseField<Treg, typename std::remove_reference_t<Tre
     }
 };
 
-template <typename Tval, typename Reg>
+template <typename Tval, Tval reset_value, typename Reg>
 struct Register {
     using reg_type = Tval;
     volatile Tval val_vol;
@@ -173,7 +148,7 @@ struct Register {
     auto read() {
         return typename Reg::StableAccess{val_vol, val_vol};
     }
-    auto init(Tval val_init) {
+    auto init(Tval val_init = reset_value) {
         return typename Reg::StableAccess{val_vol, val_init};
     }
     void write(Tval val_write) {
@@ -208,64 +183,31 @@ struct StableAccessBase {
     StableAccessBase& operator=(StableAccessBase const&) = delete;
 };
 
-////////////////////////////////////////
-//      Example 'C++ interface'       //
-////////////////////////////////////////
-struct I2cInterface {
-    struct _CR : public Register<std::uint32_t, _CR> {
-        auto SADD() { return VolatileField<decltype(*this), 0, 10>{*this, val_vol}; }
-        auto RD_WRN() { return VolatileField<decltype(*this), 10, 1>{*this, val_vol}; }
-        auto NBYTES() { return VolatileField<decltype(*this), 16, 8>{*this, val_vol}; }
-        auto PE() { return VolatileField<decltype(*this), 31, 1>{*this, val_vol}; }
+///////////////////////////////////////////////////////////////////////////////
+// Peripherals                                                               //
+///////////////////////////////////////////////////////////////////////////////
+{% for group_name, peripherals in groups.items() %}
+{% for peripheral in peripherals %}
+{% if loop.index0 == 0 %}
+struct {{group_name}}Interface {
+{% for register in peripheral.registers %}
+    struct __{{register.name}}Type : public Register<std::uint{{register.size}}_t, {{"0x%0*X" | format(register.size // 4, register.reset_value)}}, __{{register.name}}Type> {
+{% for field in register.fields | sort(attribute='bit_offset') %}
+        auto {{field.name}}() { return VolatileField<decltype(*this), {{field.bit_offset}}, {{field.bit_width}}>{*this, val_vol}; }
+{% endfor %}
 
         struct StableAccess : public StableAccessBase<reg_type> {
-            auto SADD() { return StableField<decltype(*this), 0, 10>{*this, val_copy}; }
-            template <typename Targ> auto& SADD(Targ val) { return SADD().mod(val); }
-
-            auto RD_WRN() { return StableField<decltype(*this), 10, 1>{*this, val_copy}; }
-            template <typename Targ> auto& RD_WRN(Targ val) { return RD_WRN().mod(val); }
-
-            auto NBYTES() { return StableField<decltype(*this), 16, 8>{*this, val_copy}; }
-            template <typename Targ> auto& NBYTES(Targ val) { return NBYTES().mod(val); }
-
-            auto PE() { return StableField<decltype(*this), 31, 1>{*this, val_copy}; }
-            template <typename Targ> auto& PE(Targ val) { return PE().mod(val); }
+{% for field in register.fields | sort(attribute='bit_offset') %}
+            auto {{field.name}}() { return StableField<decltype(*this), {{field.bit_offset}}, {{field.bit_width}}>{*this, val_copy}; }
+            template <typename Targ> auto& {{field.name}}(Targ val) { return {{field.name}}().mod(val); }
+{% endfor %}
         };
-    } CR;
+    } {{register.name}};
+{% endfor %}
 };
-// This static assertion proves that all the accessor functions constitute no data, and thus they can be mapped on the actual register address
-static_assert(sizeof(I2cInterface) == sizeof(I2C_TypeDef), "Too many data members");
 
-////////////////////////////////////////
-// Example code for old and new infcs //
-////////////////////////////////////////
-std::uint32_t i2c_transmit(I2C_TypeDef& i2c, std::uint8_t address, std::uint16_t length) {
-    // Set the Peripheral Enable bit first to allow further access
-    i2c.CR |= I2C_CR_PE;
+{% endif %}
+{{group_name}}Interface& {{peripheral.name}}_IFC = *reinterpret_cast<{{group_name}}Interface*>({{"0x%0*X" | format(device.width // 4, peripheral.base_address)}});
+{% endfor %}
 
-    // Read-Modify-Write cycle to efficiently configure the required fields
-    auto cr = i2c.CR;                                                                       // Read register once
-    cr = (cr & ~I2C_CR_SADD_Msk) | ((address << I2C_CR_SADD_Pos) & I2C_CR_SADD_Msk);        // Modify address
-    cr = (cr & ~I2C_CR_NBYTES_Msk) | ((length << I2C_CR_NBYTES_Pos) & I2C_CR_NBYTES_Msk);   // Modify number of bytes
-    cr &= ~I2C_CR_RD_WRN;                                                                   // Clear RD_WRN for transmit
-    i2c.CR = cr;                                                                            // Write result to register
-
-    // Retrieve the SADD value
-    return (i2c.CR & I2C_CR_NBYTES_Msk) >> I2C_CR_NBYTES_Pos;
-}
-
-std::uint32_t i2c_transmit(I2cInterface& i2c, std::uint8_t address, std::uint16_t length) {
-    // Set the Peripheral Enable bit first to allow further access
-    i2c.CR.PE().set();
-
-    // Read-Modify-Write cycle to efficiently configure the required fields
-    i2c.CR.read()       // Read register once
-       .SADD(address)   // Modify address (shorthand for cr.SADD().mod(address))
-       .NBYTES(length)  // Modify number of bytes (shorthand for cr.NBYTES().mod(length))
-       .RD_WRN().clr()  // Clear RD_WRN for transmit (explicit way of writing RD_WRN(0))
-       .write();        // Write result to register (shorthand for i2c.cr.write(cr))
-
-    // Retrieve the SADD value
-    auto val = i2c.CR.NBYTES();
-    return i2c.CR.NBYTES().get();
-}
+{% endfor %}
