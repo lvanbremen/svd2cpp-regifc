@@ -13,15 +13,38 @@ def convert(svd_xml):
     parser = SVDParser.for_xml_file(svd_xml)
     device = parser.get_device().to_dict()
 
+    # Group peripherals and fix up some strings
     grouped_peripherals = {}
     for peripheral in device['peripherals']:
+        # Strip newlines and duplicate whitespace characters from register and field descriptions
+        # TODO: some registers overlap in address_offset, make a union out of these?
+        for register in peripheral['registers']:
+            if register['description']:
+                register['description'] = ' '.join(list(filter(len, register['description'].split())))
+            for field in register['fields']:
+                field['description'] = ' '.join(list(filter(len, field['description'].split())))
+        # Add peripheral to its corresponding group
         if peripheral['group_name'] not in grouped_peripherals:
             grouped_peripherals[peripheral['group_name']] = [peripheral]
         else:
             grouped_peripherals[peripheral['group_name']].append(peripheral)
 
+    for _, peripherals in grouped_peripherals.items():
+        for register in peripherals[0]['registers']:
+            if register['description']:
+                register['description'] = ' '.join(list(filter(len, register['description'].split())))
+            for field in register['fields']:
+                field['description'] = ' '.join(list(filter(len, field['description'].split())))
+
+    # List all interrupts to be able to sort them
+    interrupts = {}
+    for peripheral in device['peripherals']:
+        if peripheral['interrupts']:
+            for interrupt in peripheral['interrupts']:
+                interrupts[interrupt['value']] = {'name': interrupt['name'], 'value': interrupt['value'], 'description': ' '.join(list(filter(len, interrupt['description'].split())))}
+
     # show(grouped_peripherals)
-    generate(device, grouped_peripherals)
+    generate(device, grouped_peripherals, interrupts)
 
 def show(grouped_peripherals):
     for group_name, peripherals in grouped_peripherals.items():
@@ -30,8 +53,7 @@ def show(grouped_peripherals):
             # Only generate the registers once per group
             if idx == 0:
                 for register in peripheral['registers']:
-                    # TODO: if 'derived_from' is set, then don't generate a new interface, just generate the accessor functions, or group peripherals by group_name
-                    # register.display_name: register.description TODO strip newlines and duplicate whitespace characters
+                    # register.display_name: register.description
                     print('    ', register['name'], register['size'], register['reset_value'], register['access'])
                     for field in register['fields']:
                         if field['access'] not in ['read-only', 'write-only', 'read-write']:
@@ -39,7 +61,7 @@ def show(grouped_peripherals):
                             exit(0)
 
                         # TODO: check SVDAccessType
-                        # field.name: field.description TODO strip newlines and duplicate whitespace characters
+                        # field.name: field.description
                         print('      ', field['name'], field['bit_offset'], field['bit_width'], field['access'])
                         # if field['is_enumerated_type']:
                         #     # Note, enumerated values could be added to the interface, but the contents in the STM SVD files is worthless...
@@ -50,7 +72,7 @@ def show(grouped_peripherals):
             # List all peripherals belonging to this group
             print('  ', peripheral['name'], peripheral['base_address'])
 
-def generate(device, grouped_peripherals):
+def generate(device, grouped_peripherals, interrupts):
     import os
     import jinja2
 
@@ -71,15 +93,23 @@ def generate(device, grouped_peripherals):
             'width': device['width'],
         },
         'groups': grouped_peripherals,
+        'interrupts': sorted(interrupts.values(), key=lambda x: x['value']),
     }
 
+    # Make sure output directory exists
     generate_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'generated')
     if not os.path.exists(generate_dir):
         print(f'Creating directory {generate_dir}')
         os.makedirs(generate_dir)
 
+    # Copy in license files for distribution
+    import shutil
+    for license_file in ['LICENSE', 'LICENSE.spdx']:
+        shutil.copyfile(license_file, os.path.join(generate_dir, license_file))
+
+    # Generate template files
     for template_file in os.listdir(template_dir):
-        generated_file = os.path.join(generate_dir, os.path.basename(template_file.removesuffix('.jinja').replace('device', device['name'])))
+        generated_file = os.path.join(generate_dir, os.path.basename(template_file.removesuffix('.jinja').replace('device', device['name'].lower())))
         print(f'Generating {generated_file}...')
         rendered = env.get_template(os.path.basename(template_file)).render(parameters)
         with open(generated_file, 'w') as file:

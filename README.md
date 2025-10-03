@@ -144,6 +144,12 @@ i2c.CR.init(0)
 ```
 
 
+### Advanced use cases
+TODO:
+Manual flag/width for field selection from list
+Overlapping registers
+
+
 
 ## Efficiency
 I hear you wondering, all those C++ function calls, that must be inefficient, right... right?

@@ -1,0 +1,7 @@
+SPDXVersion: SPDX-2.0
+DataLicense: MPL-2.0
+Creator: L. van Bremen
+PackageName: svd2cpp
+PackageOriginator: L. van Bremen
+PackageHomePage: https://github.com/lvanbremen/svd2cpp
+PackageLicenseDeclared: MPL-2.0

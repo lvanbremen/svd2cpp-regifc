@@ -1,25 +1,31 @@
 
+// SPDX-License-Identifier: MPL-2.0
+
+#ifndef common_svd2cpp_h
+#define common_svd2cpp_h
+
 #include <cstdint>
 #include <type_traits>
 #include <limits>
 
-///////////////////////////////////////////////////////////////////////////////
-// Base struct definitions                                                   //
-///////////////////////////////////////////////////////////////////////////////
-template <typename Treg, typename Tval, unsigned int Offset, unsigned int Width>
+template <typename Treg, typename Tval, unsigned int _Offset, unsigned int _Width>
 struct BaseField {
     // Define some useful field attributes
     using reg_type = typename std::remove_reference_t<Treg>::reg_type;
     static auto const reg_bits = std::numeric_limits<reg_type>::digits;
 
     // Define mask for this field
-    static_assert(Width > 0, "Width must be non-zero");
-    static_assert((Offset + Width) <= reg_bits, "Offset + Width must not exceed reg_type value size");
+    static_assert(_Width > 0, "Width must be non-zero");
+    static_assert((_Offset + _Width) <= reg_bits, "Offset + Width must not exceed reg_type value size");
+    static reg_type const constexpr Offset = _Offset;
+    static reg_type const constexpr Width = _Width;
     static reg_type const constexpr Mask = (((Offset + Width) == reg_bits) ? 0 : (reg_type(1) << (Offset + Width))) - (1U << Offset);
 
     // Create accessors for underlying data of this field
     Treg& reg_;
     Tval& val_;
+
+    BaseField(Treg& reg__, Tval& val__) : reg_(reg__), val_(val__) {}
 
   protected:
     // Modify functions are internal, exposed with different signature by either VolatileField or StableField
@@ -70,8 +76,9 @@ struct BaseField {
     template <typename Tauto>
     operator Tauto() const {
         static_assert((not std::is_same_v<Tauto, bool>) || (Width == 1), "Boolean return value is only valid for single bit fields");
-        static_assert(std::numeric_limits<Tauto>::digits >= Width, "Destination type too small, use an explicit cast to discard additional bits");
-        return (val_ & Mask) >> Offset;
+        static_assert((std::numeric_limits<Tauto>::digits == 0U) // Temporary values are always valid
+                          || std::numeric_limits<Tauto>::digits >= Width, "Destination type too small, use an explicit cast to discard additional bits");
+        return Tauto((val_ & Mask) >> Offset);
     }
     auto get() const {
         if constexpr (Width == 1) {
@@ -82,17 +89,14 @@ struct BaseField {
             return this->operator reg_type();
         }
     }
-
-  private:
-    // Delete unwanted operators
-    BaseField(BaseField const&) = delete;
-    BaseField& operator=(BaseField const&) = delete;
 };
 
 // Specialization of BaseField with RMW (volatile) access
 template <typename Treg, unsigned int Offset, unsigned int Width>
 struct VolatileField : public BaseField<Treg, volatile typename std::remove_reference_t<Treg>::reg_type, Offset, Width> {
     using Base = BaseField<Treg, volatile typename std::remove_reference_t<Treg>::reg_type, Offset, Width>;
+
+    VolatileField(Treg& reg__, volatile typename std::remove_reference_t<Treg>::reg_type& val__) : Base(reg__, val__) {}
 
     // Expose as RMW, since access is volatile, it implicitly performs a read and write
     template <typename Targ, class = typename std::enable_if<std::is_integral<Targ>::value>::type>
@@ -117,6 +121,8 @@ struct VolatileField : public BaseField<Treg, volatile typename std::remove_refe
 template <typename Treg, unsigned int Offset, unsigned int Width>
 struct StableField : public BaseField<Treg, typename std::remove_reference_t<Treg>::reg_type, Offset, Width> {
     using Base = BaseField<Treg, typename std::remove_reference_t<Treg>::reg_type, Offset, Width>;
+
+    StableField(Treg& reg__, typename std::remove_reference_t<Treg>::reg_type& val__) : Base(reg__, val__) {}
     
     // Expose as modify-only, no implicit read or write is performed
     template <typename Targ>
@@ -143,19 +149,42 @@ struct StableField : public BaseField<Treg, typename std::remove_reference_t<Tre
 template <typename Tval, Tval reset_value, typename Reg>
 struct Register {
     using reg_type = Tval;
+    static auto const reg_bits = std::numeric_limits<reg_type>::digits;
     volatile Tval val_vol;
     
     auto read() {
-        return typename Reg::StableAccess{val_vol, val_vol};
+        return typename Reg::StableAccess{ val_vol, val_vol };
     }
     auto init(Tval val_init = reset_value) {
-        return typename Reg::StableAccess{val_vol, val_init};
+        return typename Reg::StableAccess{ val_vol, val_init };
     }
     void write(Tval val_write) {
         val_vol = val_write;
     }
     void clear() {
         val_vol = 0;
+    }
+
+    void set(reg_type mask) {
+        val_vol |= mask;
+    }
+    void clr(reg_type mask) {
+        val_vol &= ~mask;
+    }
+
+    template <typename Targ, class = typename std::enable_if<std::is_integral<Targ>::value>::type>
+    void rmw(reg_type offset, reg_type mask, Targ val_set, typename std::enable_if_t<std::is_integral_v<Targ>>* = 0) {
+        rmw_internal(offset, mask, val_set);
+    }
+    template <typename Targ>
+    void rmw(reg_type offset, reg_type mask, Targ val_set, typename std::enable_if_t<!std::is_integral_v<Targ> && std::is_enum_v<Targ>>* = 0) {
+        rmw(offset, mask, static_cast<std::underlying_type_t<Targ>>(val_set));
+    }
+
+  protected:
+    void rmw_internal(reg_type offset, reg_type mask, reg_type val_set) {
+        // Width and offset are not constant, unable to use BFI here
+        val_vol = (val_vol & ~mask) | ((val_set << offset) & mask);
     }
 
   private:
@@ -170,6 +199,8 @@ struct StableAccessBase {
     volatile Tval& val_vol;
     Tval val_copy;
 
+    StableAccessBase(volatile Tval& val_vol__, Tval val_copy__) : val_vol(val_vol__), val_copy(val_copy__) {}
+
     operator Tval() {
         return val_copy;
     }
@@ -183,31 +214,4 @@ struct StableAccessBase {
     StableAccessBase& operator=(StableAccessBase const&) = delete;
 };
 
-///////////////////////////////////////////////////////////////////////////////
-// Peripherals                                                               //
-///////////////////////////////////////////////////////////////////////////////
-{% for group_name, peripherals in groups.items() %}
-{% for peripheral in peripherals %}
-{% if loop.index0 == 0 %}
-struct {{group_name}}Interface {
-{% for register in peripheral.registers %}
-    struct __{{register.name}}Type : public Register<std::uint{{register.size}}_t, {{"0x%0*X" | format(register.size // 4, register.reset_value)}}, __{{register.name}}Type> {
-{% for field in register.fields | sort(attribute='bit_offset') %}
-        auto {{field.name}}() { return VolatileField<decltype(*this), {{field.bit_offset}}, {{field.bit_width}}>{*this, val_vol}; }
-{% endfor %}
-
-        struct StableAccess : public StableAccessBase<reg_type> {
-{% for field in register.fields | sort(attribute='bit_offset') %}
-            auto {{field.name}}() { return StableField<decltype(*this), {{field.bit_offset}}, {{field.bit_width}}>{*this, val_copy}; }
-            template <typename Targ> auto& {{field.name}}(Targ val) { return {{field.name}}().mod(val); }
-{% endfor %}
-        };
-    } {{register.name}};
-{% endfor %}
-};
-
-{% endif %}
-{{group_name}}Interface& {{peripheral.name}}_IFC = *reinterpret_cast<{{group_name}}Interface*>({{"0x%0*X" | format(device.width // 4, peripheral.base_address)}});
-{% endfor %}
-
-{% endfor %}
+#endif // common_svd2cpp_h

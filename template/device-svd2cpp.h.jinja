@@ -1,0 +1,16 @@
+
+// SPDX-License-Identifier: MPL-2.0
+
+#ifndef {{device.name}}_svd2cpp_h
+#define {{device.name}}_svd2cpp_h
+
+{% for group_name, peripherals in groups.items() %}
+{% for peripheral in peripherals | sort(attribute='base_address') %}
+{% if loop.index0 == 0 %}
+struct {{group_name}}Interface;
+{% endif %}
+{% endfor %}
+
+{% endfor %}
+
+#endif // {{device.name}}_svd2cpp_h
