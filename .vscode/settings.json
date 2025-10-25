@@ -2,6 +2,13 @@
     "files.associations": {
         "cstdint": "cpp",
         "type_traits": "cpp",
-        "xstddef": "cpp"
+        "xstddef": "cpp",
+        "cstddef": "cpp",
+        "cstdio": "cpp",
+        "cstdlib": "cpp",
+        "cwchar": "cpp",
+        "initializer_list": "cpp",
+        "limits": "cpp",
+        "xtr1common": "cpp"
     }
 }

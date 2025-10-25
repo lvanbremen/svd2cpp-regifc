@@ -10,7 +10,7 @@
       "args": [
         "run",
         "svd2cpp.py",
-        "STM32H745_CM4.svd",
+        "svd/STM32H745_CM4.svd",
         "--ignore_cluster",
         "(ADC.SQR|AXI.*|DFSDM.DFSDM_FLT)"
         // TODO: don't cluster AXI, it is rubbish

@@ -1,4 +1,4 @@
-# svd2cpp
+# svd2cpp-regifc
 Convert CMSIS System View Description files to a modern C++ register interface with efficient data access functions
 
 
@@ -144,11 +144,41 @@ i2c.CR.init(0)
 ```
 
 
-### Advanced use cases
-TODO:
-Manual flag/width for field selection from list
-Overlapping registers
+## Advanced use cases
 
+### Register clustering
+By default, the generator will try and clean up registers, followed by a 'cluster' routine.
+The cluster routine will find repetition in (groups of) registers, and cluster them according to the SVD specification.
+This can be helpful if the manufacturer supplying the SVD file was too lazy to add the clusters in the SVD file itself.
+
+See this compiler explorer example demonstrating the DMA peripheral, where the 'stream' register (called 'S') is clustered, and within those channels, the 'memory' register (called 'M') is clustered recursively.
+
+[Clustering example](https://godbolt.org/z/ee35M1T4c)
+
+Note that, to make this particular clustering work, it was necessary to modify the "S0CR" register, where the manufacturer mistakenly missed the "ACK" field.
+The clustering algorithm is naturally very sensitive to such mistakes, as it makes the registers distinct, making clustered access impossible.
+Thus, if you think some register should have been clustered, but the algorithm skips it, then double check that there is no error in the SVD file.
+
+The clustering algorithm is usually helpful, however, in some cases it may not be desirable to cluster registers.
+For example, the first register in a cluster may have an additional 'enable' bit, which the other registers don't have.
+In such a case, the clustering algorithm will exclude the first register from the cluster, as it cannot generate an equal definition for all the registers.
+This problem may be resolved in the future, when overlapping registers are supported.
+For now, the best approach is to manually disable clustering for every such register, by providing the command line argument '--ignore_cluster'.
+
+### Array field access
+Every field struct in the generated register interface is uniquely defined.
+Therefore, it is not possible to store different fields in an array, no matter how similar.
+Sometimes it may be beneficial to access a field based on an array index (e.g., when the to be accessed field is a result of a calculation).
+In such cases, it is possible to manually access the *::Offset* and *::Mask* items of a field, and store these in an array.
+It is then possible to call *rmw(offset, mask, value)* directly on the register, or *mod(offset, mask, value)* on the register after *read()*, with the offset and field values based on the specified array.
+
+[Array field access](https://godbolt.org/z/75Gr9M6TT)
+
+### Overlapping registers
+Some manufacturers define overlapping registers, where one or the other definition should be used, based on some other register setting.
+A popular example is the UART peripheral, which usually has many alternative modes, and its register contents depend on the selected mode.
+
+Currently, svd2cpp does not support overlapping registers, but this feature may be added in the near future.
 
 
 ## Efficiency
