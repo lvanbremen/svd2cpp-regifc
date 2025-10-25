@@ -21,7 +21,7 @@ xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
 xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
   <name>STM32H745_CM4</name>
   <version>2.5</version>
-  <description>STM32H745_CM4</description>
+  <description>STM32H745_CM4, manually added missing ACK field for register S0CR</description>
   <cpu>
     <name>CM4</name>
     <revision>r0p1</revision>
@@ -73671,6 +73671,12 @@ Minimum value is 16</description>
               configuration</description>
               <bitOffset>21</bitOffset>
               <bitWidth>2</bitWidth>
+            </field>
+            <field>
+              <name>ACK</name>
+              <description>ACK</description>
+              <bitOffset>20</bitOffset>
+              <bitWidth>1</bitWidth>
             </field>
             <field>
               <name>CT</name>

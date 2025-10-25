@@ -1,78 +1,35 @@
 
-# class SVDAccessType(Enum):
-#     READ_ONLY = 'read-only'
-#     WRITE_ONLY = 'write-only'
-#     READ_WRITE = 'read-write'
-#     WRITE_ONCE = 'writeOnce'
-#     READ_WRITE_ONCE = 'read-writeOnce'
+def convert(svd_file, ignore_cluster_regex):
+    import svd_cleanup
 
-def convert(svd_xml):
-    from cmsis_svd import SVDParser
+    print(f'Parsing SVD file: {svd_file}...')
+    device = svd_cleanup.parse_svd(svd_file)
 
-    print(f'Parsing SVD file: {svd_xml}...')
-    parser = SVDParser.for_xml_file(svd_xml)
-    device = parser.get_device().to_dict()
+    # Group, clean and cluster registers
+    groups = svd_cleanup.group_peripherals(device)
+    svd_cleanup.simplify_registers(groups)
+    svd_cleanup.clean_registers(groups)
+    svd_cleanup.cluster_registers(groups, ignore_cluster_regex)
+    # Indicate that the device file has been modified
+    device['description'] = svd_cleanup.clean_description(device['description']) + f', cleaned and clustered by svd_cleanup with arguments "--ignore_cluster \'{ignore_cluster_regex}\'"'
+    interrupts = list_interrupts(device)
 
-    # Group peripherals and fix up some strings
-    grouped_peripherals = {}
-    for peripheral in device['peripherals']:
-        # Strip newlines and duplicate whitespace characters from register and field descriptions
-        # TODO: some registers overlap in address_offset, make a union out of these?
-        for register in peripheral['registers']:
-            if register['description']:
-                register['description'] = ' '.join(list(filter(len, register['description'].split())))
-            for field in register['fields']:
-                field['description'] = ' '.join(list(filter(len, field['description'].split())))
-        # Add peripheral to its corresponding group
-        if peripheral['group_name'] not in grouped_peripherals:
-            grouped_peripherals[peripheral['group_name']] = [peripheral]
-        else:
-            grouped_peripherals[peripheral['group_name']].append(peripheral)
+    # TODO: update generate to accomodate for:
+    # - Overlapping registers should be generated in a union
+    # - Allow a subset of registers to be clustered, and generate the overlapping registers, e.g., if the first register in the cluster has an additional 'enable' bit
+    # - Check SVDAccessType and maybe improve the register interface based on that (e.g., read-only fields do not get the 'write()' function)
+    generate(device, groups, interrupts)
 
-    for _, peripherals in grouped_peripherals.items():
-        for register in peripherals[0]['registers']:
-            if register['description']:
-                register['description'] = ' '.join(list(filter(len, register['description'].split())))
-            for field in register['fields']:
-                field['description'] = ' '.join(list(filter(len, field['description'].split())))
-
+def list_interrupts(device):
     # List all interrupts to be able to sort them
     interrupts = {}
     for peripheral in device['peripherals']:
         if peripheral['interrupts']:
             for interrupt in peripheral['interrupts']:
                 interrupts[interrupt['value']] = {'name': interrupt['name'], 'value': interrupt['value'], 'description': ' '.join(list(filter(len, interrupt['description'].split())))}
+    return interrupts
 
-    # show(grouped_peripherals)
-    generate(device, grouped_peripherals, interrupts)
-
-def show(grouped_peripherals):
-    for group_name, peripherals in grouped_peripherals.items():
-        print(f'Group: {group_name}')
-        for idx, peripheral in enumerate(peripherals):
-            # Only generate the registers once per group
-            if idx == 0:
-                for register in peripheral['registers']:
-                    # register.display_name: register.description
-                    print('    ', register['name'], register['size'], register['reset_value'], register['access'])
-                    for field in register['fields']:
-                        if field['access'] not in ['read-only', 'write-only', 'read-write']:
-                            print(f'Unsupported accessor "{field['access']}" for field "{field['name']}" of register "{register['name']}" of peripheral "{peripheral['name']}"')
-                            exit(0)
-
-                        # TODO: check SVDAccessType
-                        # field.name: field.description
-                        print('      ', field['name'], field['bit_offset'], field['bit_width'], field['access'])
-                        # if field['is_enumerated_type']:
-                        #     # Note, enumerated values could be added to the interface, but the contents in the STM SVD files is worthless...
-                        #     enumerated_values = field['enumerated_values'][0]['enumerated_values']
-                            # for enum_val in enumerated_values:
-                            #     print('        ', enum_val['name'], enum_val['value'], enum_val['description'])
-
-            # List all peripherals belonging to this group
-            print('  ', peripheral['name'], peripheral['base_address'])
-
-def generate(device, grouped_peripherals, interrupts):
+def generate(device, groups, interrupts):
     import os
     import jinja2
 
@@ -87,12 +44,17 @@ def generate(device, grouped_peripherals, interrupts):
         undefined=jinja2.StrictUndefined
     )
 
+    def cvar(var_name):
+        import re
+        var_name = re.sub('[^A-Za-z0-9_]+', '_', str(var_name))
+        if var_name[0].isdigit():
+            var_name = '_' + var_name
+        return var_name
+    env.filters["cvar"] = cvar
+
     parameters = {
-        'device': {
-            'name': device['name'],
-            'width': device['width'],
-        },
-        'groups': grouped_peripherals,
+        'device': device,
+        'groups': groups,
         'interrupts': sorted(interrupts.values(), key=lambda x: x['value']),
     }
 
@@ -121,11 +83,12 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(prog='svd2cpp', description='Convert CMSIS SVD to modern C++ interfaces')
     parser.add_argument('svd_file', type=str, help='Path to the SVD file to convert')
+    parser.add_argument('--ignore_cluster', type=str, help='Regex indicating which clusters to ignore, passed to svd_cleanup', default='')
     args = parser.parse_args()
 
     print('Converting SVD file:', args.svd_file)
 
-    convert(args.svd_file)
+    convert(args.svd_file, args.ignore_cluster)
 
     print()
     print('All done!')
