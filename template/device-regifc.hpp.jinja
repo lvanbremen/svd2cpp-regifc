@@ -92,8 +92,8 @@ struct {{interface_name}}Interface {
 {% endif %}
 {% endmacro %}
 
-#include "{{device.name.lower()}}-svd2cpp.h"
-#include "common-svd2cpp.h"
+#include "{{device.name.lower()}}-regifc.h"
+#include "common-regifc.h"
 
 {% for group in groups.values() %}
 {{ render_interface(group.registers, group.name, group.description) }}

@@ -9,8 +9,8 @@
 // Description: {{device.description}}
 //
 
-#ifndef {{device.name}}_svd2cpp_h
-#define {{device.name}}_svd2cpp_h
+#ifndef {{device.name}}_regifc_h
+#define {{device.name}}_regifc_h
 
 {% macro render_forward_declaration(registers, base_name, description) %}
 // {{description}}
@@ -25,4 +25,4 @@ struct {{base_name}}Interface;
 {% for group in groups.values() %}
 {{ render_forward_declaration(group.registers, group.name, group.description) }}
 {% endfor %}
-#endif // {{device.name}}_svd2cpp_h
+#endif // {{device.name}}_regifc_h
