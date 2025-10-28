@@ -15,7 +15,7 @@ def group_peripherals(device):
     Returns a list with, for each of these groups, a dictionary with the following properties:
      * name: the group name of all the peripherals in the group
      * registers: the registers of all the peripherals in the group
-     * peripherals: a list of all peripherals belonging to the group, excluding their registers 
+     * peripherals: a list of all peripherals belonging to the group, excluding their registers
     """
     groups = {}
     for peripheral in device['peripherals']:
@@ -57,7 +57,7 @@ def clean_registers(groups):
 def cluster_registers(groups, ignore_cluster_regex=''):
     """
     The input of this function is the result of group_peripherals().
-    If the SVD file contains clusters, then these require to be 
+    If the SVD file contains clusters, then these require to be
     For each group, try and find the largest run in registers that is repeating, and replace it by a cluster.
     A run of registers is any amount of subsequent registers.
     The run of x registers is repeating if the next x registers:
@@ -137,9 +137,9 @@ def cluster_registers_list(print_name, registers, cluster_ignore):
             run_offset = run_offset + run_properties['length'] * run_properties['repeat']
         else:
             run_offset = run_offset + 1
-    
+
     cluster_names = [cluster['name'] for cluster in clusters]
-    
+
     # Replace all registers in clusters by their cluster component
     # In reverse order of offset, to maintain correct offset values even when registers are removed
     for cluster in sorted(clusters, reverse=True, key=lambda x: x['offset']):
@@ -163,7 +163,7 @@ def cluster_registers_list(print_name, registers, cluster_ignore):
         # The description of each register in the cluster is a combination of all descriptions in that repeat. Take all common parts, and place the differentiating parts between [] divided by |.
         cluster_contents = []
         for idx in range(0, cluster['length']):
-            cluster_description_overlap = find_string_overlap([x['description'] for x in cluster_regs[idx::cluster['length']]])
+            cluster_description_overlap = find_string_overlap([x['description'] for x in cluster_regs[idx::cluster['length']] if x['description']])
             cluster_description = ""
             for part in range(0, len(cluster_description_overlap)):
                 if part % 2 == 0:
@@ -321,7 +321,7 @@ def check_items_similar(items1, items2, loose = True):
                     # print(f'Found mismatch for key {name} at index {subidx}')
                     return False # Items are not recursively similar, then these are not similar
             # TODO: if the fields of the second item are all contained in the fields of the first, then it is OK?
-            # TODO: Check if for all fields in the second items, a similar field is contained in the first 
+            # TODO: Check if for all fields in the second items, a similar field is contained in the first
             # for _, subval2 in enumerate(items2[name]):
             #     for _, subval1 in enumerate(value):
             #         if check_items_similar(subval1, subval2, loose=True):

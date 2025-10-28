@@ -12,8 +12,7 @@
         "svd2cpp.py",
         "svd/STM32H745_CM4.svd",
         "--ignore_cluster",
-        "(ADC.SQR|AXI.*|DFSDM.DFSDM_FLT)"
-        // TODO: don't cluster AXI, it is rubbish
+        "(ADC.SQR|AXI.*|DFSDM.DFSDM_FLT|RCC.PLL)"
       ],
       "group": {
         "kind": "build",
