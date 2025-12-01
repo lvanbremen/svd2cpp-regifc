@@ -42,26 +42,55 @@ struct {{struct_name}} : public Register<std::uint{{register.size}}_t, {{"0x%0*X
 
 {% endmacro %}
 {% macro render_registers(registers, base_name) -%}
+{% set ns = namespace() %}
+{% set ns.union_active = false %}
+{% set ns.union_end_address = 0 %}
 {% for register in registers %}
 {% if loop.index0 == 0 %}
 {% set prev_address_end = 0 %}
 {% else %}
 {% set prev_address_end = loop.previtem.address_offset + loop.previtem.size // 8 %}
 {% endif %}
-{% if prev_address_end <= register.address_offset %}
-{% if prev_address_end != register.address_offset %}
+{% set union_needed = (not loop.last) and (loop.nextitem.address_offset == register.address_offset) %}
+{% if not ns.union_active and union_needed %}
+    union {
+    {% set ns.union_names = [register.name] %}
+    {% set ns.union_index = 0 %}
+    {% set ns.union_first_address = register.address_offset %}
+    {% set ns.union_end_address = register.address_offset + register.size // 8 %}
+    {% for union_register in registers[loop.index:-1] if union_register.address_offset == ns.union_first_address %}
+        {% set ns.union_names = ns.union_names + [union_register.name] %}
+        {% if ns.union_end_address != (register.address_offset + register.size // 8) %}
+            {{ raise("Overlapping registers in union must have the same size " + ns.union_end_address + ", " + register.address_offset + ", " + register.size) }}
+        {% endif %}
+    {% endfor %}
+    {% set ns.union_prefix, ns.union_names = find_common_prefix(ns.union_names) %}
+    {% set ns.union_active = true %}
+{% endif %}
+
+{% if prev_address_end <= register.address_offset or (ns.union_active and loop.previtem.address_offset == register.address_offset) %}
+    {% if prev_address_end != register.address_offset and (not ns.union_active)%}
   private:
     std::uint8_t _reserved_{{"%X" | format(prev_address_end)}}[{{register.address_offset - prev_address_end}}];
   public:
 
-{% endif %}
-{% if 'registers' in register %}
+    {% endif %}
+    {% if 'registers' in register %}
     // {{register.description}}
-{% set cluster_name = register.name.replace('[%s]', '').replace('%s', '') %}
+        {% set cluster_name = register.name.replace('[%s]', '').replace('%s', '') %}
     {{base_name}}{{cluster_name}}Interface {{cluster_name}}[{{register.dim}}];
-{% else %}
-    {{ render_register(register, register.name|string + 'Reg', register.name) | indent -}}
+    {% else %}
+        {% set register_name = register.name|string if not ns.union_active else ns.union_names[ns.union_index] %}
+    {{ render_register(register, register_name + 'Reg', register_name) | indent -}}
+    {% endif %}
 {% endif %}
+{% if ns.union_active %}
+    {% set ns.union_index = ns.union_index + 1 %}
+{% endif %}
+{% if ns.union_active and not union_needed %}
+    } {{ ns.union_prefix }};
+    {% set ns.union_active = false %}
+    {% set ns.union_names = [] %}
 {% endif %}
 {% endfor %}
 {% endmacro %}

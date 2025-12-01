@@ -15,7 +15,6 @@ def convert(svd_file, ignore_cluster_regex):
     interrupts = list_interrupts(device)
 
     # TODO: update generate to accomodate for:
-    # - Overlapping registers should be generated in a union
     # - Allow a subset of registers to be clustered, and generate the overlapping registers, e.g., if the first register in the cluster has an additional 'enable' bit
     # - Check SVDAccessType and maybe improve the register interface based on that (e.g., read-only fields do not get the 'write()' function)
     generate(device, groups, interrupts)
@@ -51,6 +50,33 @@ def generate(device, groups, interrupts):
             var_name = '_' + var_name
         return var_name
     env.filters["cvar"] = cvar
+
+    def raise_helper(msg):
+        raise Exception(msg)
+    env.globals['raise'] = raise_helper
+
+    def find_common_prefix(names):
+        if not names:
+            return '', []
+
+        prefix = names[0]
+        for name in names[1:]:
+            while not name.startswith(prefix):
+                prefix = prefix[:-1]
+                if not prefix:
+                    raise Exception("No common prefix found")
+        prefix = prefix.rstrip('_')
+        
+        stripped_names = []
+        for name in names:
+            stripped_name = name[len(prefix):].lstrip('_')
+            # if the stripped name starts with a digit, prefix with underscore
+            if (stripped_name[0].isdigit()):
+                stripped_name = '_' + stripped_name
+            stripped_names.append(stripped_name)
+        print(f'Common prefix: "{prefix}" for names: {names} -> stripped names: {stripped_names}')
+        return prefix, stripped_names
+    env.globals['find_common_prefix'] = find_common_prefix
 
     parameters = {
         'device': device,
