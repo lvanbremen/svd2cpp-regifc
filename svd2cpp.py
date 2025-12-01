@@ -66,7 +66,7 @@ def generate(device, groups, interrupts):
                 if not prefix:
                     raise Exception("No common prefix found")
         prefix = prefix.rstrip('_')
-        
+
         stripped_names = []
         for name in names:
             stripped_name = name[len(prefix):].lstrip('_')
@@ -79,6 +79,7 @@ def generate(device, groups, interrupts):
     env.globals['find_common_prefix'] = find_common_prefix
 
     parameters = {
+        'svd2cpp_version': '1.1',
         'device': device,
         'groups': groups,
         'interrupts': sorted(interrupts.values(), key=lambda x: x['value']),
@@ -106,7 +107,7 @@ def generate(device, groups, interrupts):
 
 if __name__ == "__main__":
     import argparse
-    
+
     parser = argparse.ArgumentParser(prog='svd2cpp', description='Convert CMSIS SVD to modern C++ interfaces')
     parser.add_argument('svd_file', type=str, help='Path to the SVD file to convert')
     parser.add_argument('--ignore_cluster', type=str, help='Regex indicating which clusters to ignore, passed to svd_cleanup', default='')
@@ -118,5 +119,3 @@ if __name__ == "__main__":
 
     print()
     print('All done!')
-
-                
