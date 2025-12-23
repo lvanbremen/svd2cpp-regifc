@@ -98,11 +98,27 @@ def generate(device, groups, interrupts):
 
     # Generate template files
     for template_file in os.listdir(template_dir):
+        if template_file == 'macros':
+            continue
         generated_file = os.path.join(generate_dir, os.path.basename(template_file.removesuffix('.jinja').replace('device', device['name'].lower())))
-        print(f'Generating {generated_file}...')
-        rendered = env.get_template(os.path.basename(template_file)).render(parameters)
-        with open(generated_file, 'w') as file:
-            file.write(rendered)
+        print(template_file)
+        if (template_file == 'device' and os.path.isdir(os.path.join(template_dir, template_file))):
+            for group_name, group in groups.items():
+                group_generated_file = os.path.join(generated_file, f"{group_name.lower()}.hpp")
+                print(f'Generating {group_generated_file}...')
+                rendered = env.get_template(os.path.join(template_file, 'group.hpp.jinja')).render({**parameters, 'group': group})
+                # Make sure output directory exists
+                if not os.path.exists(generated_file):
+                    print(f'Creating directory {generated_file}')
+                    os.makedirs(generated_file)
+                with open(group_generated_file, 'w') as file:
+                    file.write(rendered)
+        else:
+            
+            print(f'Generating {generated_file}...')
+            rendered = env.get_template(os.path.basename(template_file)).render(parameters)
+            with open(generated_file, 'w') as file:
+                file.write(rendered)
 
 
 if __name__ == "__main__":
