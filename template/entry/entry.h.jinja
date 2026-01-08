@@ -1,0 +1,58 @@
+
+#ifndef {{include_name}}
+#define {{include_name}}
+
+#if defined(STM32H743xx)
+#error "Target not yet generated using svd2cpp"
+#elif defined(STM32H753xx)
+#error "Target not yet generated using svd2cpp"
+#elif defined(STM32H750xx)
+#error "Target not yet generated using svd2cpp"
+#elif defined(STM32H742xx)
+#error "Target not yet generated using svd2cpp"
+#elif defined(STM32H745xx)
+#if defined(CORE_CM4)
+#include "stm32h745_cm4/stm32h745_cm4-{{base_file}}"
+#endif
+#if defined(CORE_CM7)
+#include "stm32h745_cm4/stm32h745_cm7-{{base_file}}"
+#endif
+#elif defined(STM32H745xG)
+#error "Target not yet generated using svd2cpp"
+#elif defined(STM32H755xx)
+#error "Target not yet generated using svd2cpp"
+#elif defined(STM32H747xx)
+#error "Target not yet generated using svd2cpp"
+#elif defined(STM32H747xG)
+#error "Target not yet generated using svd2cpp"
+#elif defined(STM32H757xx)
+#error "Target not yet generated using svd2cpp"
+#elif defined(STM32H7B0xx)
+#error "Target not yet generated using svd2cpp"
+#elif defined(STM32H7B0xxQ)
+#error "Target not yet generated using svd2cpp"
+#elif defined(STM32H7A3xx)
+#error "Target not yet generated using svd2cpp"
+#elif defined(STM32H7B3xx)
+#error "Target not yet generated using svd2cpp"
+#elif defined(STM32H7A3xxQ)
+#error "Target not yet generated using svd2cpp"
+#elif defined(STM32H7B3xxQ)
+#error "Target not yet generated using svd2cpp"
+#elif defined(STM32H735xx)
+#error "Target not yet generated using svd2cpp"
+#elif defined(STM32H733xx)
+#error "Target not yet generated using svd2cpp"
+#elif defined(STM32H730xx)
+#error "Target not yet generated using svd2cpp"
+#elif defined(STM32H730xxQ)
+#error "Target not yet generated using svd2cpp"
+#elif defined(STM32H725xx)
+#error "Target not yet generated using svd2cpp"
+#elif defined(STM32H723xx)
+#error "Target not yet generated using svd2cpp"
+#else
+#error "Please select first the target STM32H7xx device used in your application"
+#endif
+
+#endif // {{include_name}}

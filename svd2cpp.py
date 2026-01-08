@@ -86,7 +86,7 @@ def generate(device, groups, interrupts):
     }
 
     # Make sure output directory exists
-    generate_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'generated')
+    generate_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'generated', device['name'].lower())
     if not os.path.exists(generate_dir):
         print(f'Creating directory {generate_dir}')
         os.makedirs(generate_dir)
@@ -96,30 +96,66 @@ def generate(device, groups, interrupts):
     for license_file in ['LICENSE', 'LICENSE.spdx']:
         shutil.copyfile(license_file, os.path.join(generate_dir, license_file))
 
-    # Generate template files
-    for template_file in os.listdir(template_dir):
-        if template_file == 'macros':
-            continue
+    # Generate common template files
+    for template_file in os.listdir(os.path.join(template_dir, "common")):
+        template_file = os.path.join("common", template_file)
         generated_file = os.path.join(generate_dir, os.path.basename(template_file.removesuffix('.jinja').replace('device', device['name'].lower())))
-        print(template_file)
-        if (template_file == 'device' and os.path.isdir(os.path.join(template_dir, template_file))):
-            for group_name, group in groups.items():
-                group_generated_file = os.path.join(generated_file, f"{group_name.lower()}.hpp")
-                print(f'Generating {group_generated_file}...')
-                rendered = env.get_template(os.path.join(template_file, 'group.hpp.jinja')).render({**parameters, 'group': group})
-                # Make sure output directory exists
-                if not os.path.exists(generated_file):
-                    print(f'Creating directory {generated_file}')
-                    os.makedirs(generated_file)
-                with open(group_generated_file, 'w') as file:
-                    file.write(rendered)
-        else:
-            
+        print(f'Generating {generated_file}...')
+        print(f'Template file: {template_file}')
+        rendered = env.get_template(template_file).render(parameters)
+        with open(generated_file, 'w') as file:
+            file.write(rendered)
+    
+    # Generate group-specific template files
+    for template_file in os.listdir(os.path.join(template_dir, "group")):
+        template_file = os.path.join("group", template_file)
+
+        # Generate for each group
+        for group_name, group in groups.items():
+            generate_base_name = f'{device['name'].lower()}_{os.path.basename(template_file.removesuffix('.jinja').replace('group', group_name.lower()))}'
+            generated_file = os.path.join(generate_dir, generate_base_name)
             print(f'Generating {generated_file}...')
-            rendered = env.get_template(os.path.basename(template_file)).render(parameters)
+            rendered = env.get_template(template_file).render({**parameters, 'group': group})
+            
             with open(generated_file, 'w') as file:
                 file.write(rendered)
 
+    # Generate entry files
+    filenames = [filename for filename in os.listdir(os.path.join(template_dir, "common")) if os.path.basename(filename).startswith('device')]
+    
+    
+    generate_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'generated')
+    template_file = os.path.join("entry", "entry.h.jinja")
+    for filename in filenames:
+        generated_file = os.path.join(generate_dir, filename.removesuffix('.jinja').replace('device-', '').replace('device_', ''))
+        base_file = os.path.basename(generated_file)
+        if (generated_file.endswith('.hpp')):
+            generated_file = generated_file.replace('.hpp', '.h')
+        include_name = os.path.basename(generated_file).replace('.', '_').replace('-', '_')
+        print(f'Generating entry common {generated_file}...')
+        rendered = env.get_template(template_file).render({'include_name': include_name, 'base_file': base_file})
+        with open(generated_file, 'w') as file:
+                file.write(rendered)
+
+    # generate entry files for groups
+    filenames.extend([f'{group_name.lower()}.hpp' for group_name in groups.keys()])
+    group_generate_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'generated', 'group')
+    if not os.path.exists(group_generate_dir):
+        print(f'Creating directory {group_generate_dir}')
+        os.makedirs(group_generate_dir)
+
+    for filename in filenames:
+        generated_file = os.path.join(group_generate_dir, filename.removesuffix('.jinja').replace('device-', '').replace('device_', ''))
+        base_file = os.path.basename(generated_file)
+        if (generated_file.endswith('.hpp')):
+            generated_file = generated_file.replace('.hpp', '.h')
+        include_name = os.path.basename(generated_file).replace('.', '_').replace('-', '_')
+
+        print(f'Generating entry group {generated_file}...')
+        
+        rendered = env.get_template(template_file).render({'include_name': include_name, 'base_file': base_file})
+        with open(generated_file, 'w') as file:
+                file.write(rendered)
 
 if __name__ == "__main__":
     import argparse
