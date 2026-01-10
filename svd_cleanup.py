@@ -111,7 +111,10 @@ def clean_registers_list(registers):
         if register['description']:
             register['description'] = ' '.join(list(filter(len, register['description'].split())))
         for field in register['fields']:
-            field['description'] = ' '.join(list(filter(len, field['description'].split())))
+            if field['description']:
+                field['description'] = ' '.join(list(filter(len, field['description'].split())))
+            else:
+                field['description'] = ''
 
     registers.sort(key=lambda x: x['address_offset'])
 
