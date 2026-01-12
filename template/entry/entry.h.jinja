@@ -1,0 +1,17 @@
+
+#ifndef {{include_def}}
+#define {{include_def}}
+
+{% for svd in svds %}
+{% if loop.first %}
+#if  defined({{svd.define}})
+{% else %}
+#elif defined({{svd.define}})
+{% endif %}
+#include "{{svd.filename}}/{{svd.filename}}-{{include_file}}"
+{% endfor %}
+#else
+#error "Unkown target or target not generated with svd2cpp"
+#endif
+
+#endif // {{include_def}}
