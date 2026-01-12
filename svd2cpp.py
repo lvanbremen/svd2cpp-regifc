@@ -1,4 +1,4 @@
-_SVD2CPP_VERSION = '1.1'
+_SVD2CPP_VERSION = '1.2'
 
 def convert(svd_file, ignore_cluster_regex):
     import svd_cleanup
