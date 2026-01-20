@@ -10,6 +10,7 @@ def parse_svd(svd_file : str) -> dict:
     return device
 
 def group_peripherals(device):
+    import string
     """
     Parse the SVD device (result of parse_svd()) and find all peripherals that have a matching group.
     Returns a list with, for each of these groups, a dictionary with the following properties:
@@ -17,19 +18,22 @@ def group_peripherals(device):
      * registers: the registers of all the peripherals in the group
      * peripherals: a list of all peripherals belonging to the group, excluding their registers
     """
+    
+    remove_digits = str.maketrans('', '', string.digits)
     groups = {}
     for peripheral in device['peripherals']:
         # Create a group with common registers and/or add peripheral to its corresponding group
-        if peripheral['group_name'] not in groups:
+        group_name = peripheral['name'].translate(remove_digits)
+        if group_name not in groups:
             group = {
-                'name': peripheral['group_name'],
+                'name': group_name,
                 'registers': peripheral['registers'],
                 'description': peripheral['description'],
                 'peripherals': [peripheral],
             }
-            groups[peripheral['group_name']] = group
+            groups[group_name] = group
         else:
-            groups[peripheral['group_name']]['peripherals'].append(peripheral)
+            groups[group_name]['peripherals'].append(peripheral)
         # Delete the grouped items from this peripheral, only the common defintion should be used
         del peripheral['description']
         del peripheral['registers']
