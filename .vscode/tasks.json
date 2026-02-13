@@ -11,6 +11,7 @@
         "run",
         "svd2cpp.py",
         "svd/STM32H745_CM4.svd",
+        "svd/STM32H745_CM7.svd",
         "--ignore_cluster",
         "(ADC.SQR|AXI.*|DFSDM.DFSDM_FLT|RCC.PLL)"
       ],

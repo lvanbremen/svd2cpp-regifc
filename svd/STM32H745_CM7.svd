@@ -21,12 +21,18 @@ xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
 xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
   <name>STM32H745_CM7</name>
   <version>2.5</version>
-  <description>STM32H745_CM4
+  <description>STM32H745_CM7
   manual edits:
   1. add "C2_xx" fields, copied from "C1_xx" fields with modified address
   2. added missing TRBUFF field for register S0CR, and rename ACK to TRBUFF for remaining SxCR
   3. fix USART NE field mistakenly named NF
   4. split DMAMUX1 and DMAMUX2 in separate groups, as they are not equal
+  5. Timer interface: OC4M_4 -> OC4M_3
+  6. I2C CR2 ADDx merged to one ADD field
+  7. ADC ISR.LDORDY, SMPR1.SMP0 fields added. SQR1.L, CFGR2.OSVR correctly named
+  8. Give ADC*_Common its own group
+  9. Rename BDMA register names so that they can be grouped in an array + fixes in BDMA
+  10. Add PWR_CR3 missing fields (SDEXTHP, SDLEVEL)
   </description>
   <cpu>
     <name>CM7</name>
@@ -1418,7 +1424,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           <resetValue>0x00000000</resetValue>
           <fields>
             <field>
-              <name>GIF1</name>
+              <name>GIF0</name>
               <description>Channel x global interrupt flag (x =
               1..8) This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1427,7 +1433,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>TCIF1</name>
+              <name>TCIF0</name>
               <description>Channel x transfer complete flag (x =
               1..8) This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1436,7 +1442,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>HTIF1</name>
+              <name>HTIF0</name>
               <description>Channel x half transfer flag (x = 1..8)
               This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1445,7 +1451,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>TEIF1</name>
+              <name>TEIF0</name>
               <description>Channel x transfer error flag (x = 1..8)
               This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1454,7 +1460,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>GIF2</name>
+              <name>GIF1</name>
               <description>Channel x global interrupt flag (x =
               1..8) This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1463,7 +1469,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>TCIF2</name>
+              <name>TCIF1</name>
               <description>Channel x transfer complete flag (x =
               1..8) This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1472,7 +1478,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>HTIF2</name>
+              <name>HTIF1</name>
               <description>Channel x half transfer flag (x = 1..8)
               This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1481,7 +1487,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>TEIF2</name>
+              <name>TEIF1</name>
               <description>Channel x transfer error flag (x = 1..8)
               This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1490,7 +1496,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>GIF3</name>
+              <name>GIF2</name>
               <description>Channel x global interrupt flag (x =
               1..8) This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1499,7 +1505,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>TCIF3</name>
+              <name>TCIF2</name>
               <description>Channel x transfer complete flag (x =
               1..8) This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1508,7 +1514,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>HTIF3</name>
+              <name>HTIF2</name>
               <description>Channel x half transfer flag (x = 1..8)
               This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1517,7 +1523,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>TEIF3</name>
+              <name>TEIF2</name>
               <description>Channel x transfer error flag (x = 1..8)
               This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1526,7 +1532,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>GIF4</name>
+              <name>GIF3</name>
               <description>Channel x global interrupt flag (x =
               1..8) This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1535,7 +1541,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>TCIF4</name>
+              <name>TCIF3</name>
               <description>Channel x transfer complete flag (x =
               1..8) This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1544,7 +1550,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>HTIF4</name>
+              <name>HTIF3</name>
               <description>Channel x half transfer flag (x = 1..8)
               This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1553,7 +1559,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>TEIF4</name>
+              <name>TEIF3</name>
               <description>Channel x transfer error flag (x = 1..8)
               This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1562,7 +1568,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>GIF5</name>
+              <name>GIF4</name>
               <description>Channel x global interrupt flag (x =
               1..8) This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1571,7 +1577,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>TCIF5</name>
+              <name>TCIF4</name>
               <description>Channel x transfer complete flag (x =
               1..8) This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1580,7 +1586,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>HTIF5</name>
+              <name>HTIF4</name>
               <description>Channel x half transfer flag (x = 1..8)
               This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1589,7 +1595,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>TEIF5</name>
+              <name>TEIF4</name>
               <description>Channel x transfer error flag (x = 1..8)
               This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1598,7 +1604,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>GIF6</name>
+              <name>GIF5</name>
               <description>Channel x global interrupt flag (x =
               1..8) This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1607,7 +1613,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>TCIF6</name>
+              <name>TCIF5</name>
               <description>Channel x transfer complete flag (x =
               1..8) This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1616,7 +1622,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>HTIF6</name>
+              <name>HTIF5</name>
               <description>Channel x half transfer flag (x = 1..8)
               This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1625,7 +1631,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>TEIF6</name>
+              <name>TEIF5</name>
               <description>Channel x transfer error flag (x = 1..8)
               This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1634,7 +1640,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>GIF7</name>
+              <name>GIF6</name>
               <description>Channel x global interrupt flag (x =
               1..8) This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1643,7 +1649,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>TCIF7</name>
+              <name>TCIF6</name>
               <description>Channel x transfer complete flag (x =
               1..8) This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1652,7 +1658,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>HTIF7</name>
+              <name>HTIF6</name>
               <description>Channel x half transfer flag (x = 1..8)
               This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1661,7 +1667,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>TEIF7</name>
+              <name>TEIF6</name>
               <description>Channel x transfer error flag (x = 1..8)
               This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1670,7 +1676,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>GIF8</name>
+              <name>GIF7</name>
               <description>Channel x global interrupt flag (x =
               1..8) This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1679,7 +1685,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>TCIF8</name>
+              <name>TCIF7</name>
               <description>Channel x transfer complete flag (x =
               1..8) This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1688,7 +1694,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>HTIF8</name>
+              <name>HTIF7</name>
               <description>Channel x half transfer flag (x = 1..8)
               This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1697,7 +1703,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>TEIF8</name>
+              <name>TEIF7</name>
               <description>Channel x transfer error flag (x = 1..8)
               This bit is set by hardware. It is cleared by
               software writing 1 to the corresponding bit in the
@@ -1718,224 +1724,224 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           <resetValue>0x00000000</resetValue>
           <fields>
             <field>
-              <name>CGIF1</name>
+              <name>CGIF0</name>
               <description>Channel x global interrupt clear This
               bit is set and cleared by software.</description>
               <bitOffset>0</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CTCIF1</name>
+              <name>CTCIF0</name>
               <description>Channel x transfer complete clear This
               bit is set and cleared by software.</description>
               <bitOffset>1</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CHTIF1</name>
+              <name>CHTIF0</name>
               <description>Channel x half transfer clear This bit
               is set and cleared by software.</description>
               <bitOffset>2</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CTEIF1</name>
+              <name>CTEIF0</name>
               <description>Channel x transfer error clear This bit
               is set and cleared by software.</description>
               <bitOffset>3</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CGIF2</name>
+              <name>CGIF1</name>
               <description>Channel x global interrupt clear This
               bit is set and cleared by software.</description>
               <bitOffset>4</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CTCIF2</name>
+              <name>CTCIF1</name>
               <description>Channel x transfer complete clear This
               bit is set and cleared by software.</description>
               <bitOffset>5</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CHTIF2</name>
+              <name>CHTIF1</name>
               <description>Channel x half transfer clear This bit
               is set and cleared by software.</description>
               <bitOffset>6</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CTEIF2</name>
+              <name>CTEIF1</name>
               <description>Channel x transfer error clear This bit
               is set and cleared by software.</description>
               <bitOffset>7</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CGIF3</name>
+              <name>CGIF2</name>
               <description>Channel x global interrupt clear This
               bit is set and cleared by software.</description>
               <bitOffset>8</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CTCIF3</name>
+              <name>CTCIF2</name>
               <description>Channel x transfer complete clear This
               bit is set and cleared by software.</description>
               <bitOffset>9</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CHTIF3</name>
+              <name>CHTIF2</name>
               <description>Channel x half transfer clear This bit
               is set and cleared by software.</description>
               <bitOffset>10</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CTEIF3</name>
+              <name>CTEIF2</name>
               <description>Channel x transfer error clear This bit
               is set and cleared by software.</description>
               <bitOffset>11</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CGIF4</name>
+              <name>CGIF3</name>
               <description>Channel x global interrupt clear This
               bit is set and cleared by software.</description>
               <bitOffset>12</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CTCIF4</name>
+              <name>CTCIF3</name>
               <description>Channel x transfer complete clear This
               bit is set and cleared by software.</description>
               <bitOffset>13</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CHTIF4</name>
+              <name>CHTIF3</name>
               <description>Channel x half transfer clear This bit
               is set and cleared by software.</description>
               <bitOffset>14</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CTEIF4</name>
+              <name>CTEIF3</name>
               <description>Channel x transfer error clear This bit
               is set and cleared by software.</description>
               <bitOffset>15</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CGIF5</name>
+              <name>CGIF4</name>
               <description>Channel x global interrupt clear This
               bit is set and cleared by software.</description>
               <bitOffset>16</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CTCIF5</name>
+              <name>CTCIF4</name>
               <description>Channel x transfer complete clear This
               bit is set and cleared by software.</description>
               <bitOffset>17</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CHTIF5</name>
+              <name>CHTIF4</name>
               <description>Channel x half transfer clear This bit
               is set and cleared by software.</description>
               <bitOffset>18</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CTEIF5</name>
+              <name>CTEIF4</name>
               <description>Channel x transfer error clear This bit
               is set and cleared by software.</description>
               <bitOffset>19</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CGIF6</name>
+              <name>CGIF5</name>
               <description>Channel x global interrupt clear This
               bit is set and cleared by software.</description>
               <bitOffset>20</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CTCIF6</name>
+              <name>CTCIF5</name>
               <description>Channel x transfer complete clear This
               bit is set and cleared by software.</description>
               <bitOffset>21</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CHTIF6</name>
+              <name>CHTIF5</name>
               <description>Channel x half transfer clear This bit
               is set and cleared by software.</description>
               <bitOffset>22</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CTEIF6</name>
+              <name>CTEIF5</name>
               <description>Channel x transfer error clear This bit
               is set and cleared by software.</description>
               <bitOffset>23</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CGIF7</name>
+              <name>CGIF6</name>
               <description>Channel x global interrupt clear This
               bit is set and cleared by software.</description>
               <bitOffset>24</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CTCIF7</name>
+              <name>CTCIF6</name>
               <description>Channel x transfer complete clear This
               bit is set and cleared by software.</description>
               <bitOffset>25</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CHTIF7</name>
+              <name>CHTIF6</name>
               <description>Channel x half transfer clear This bit
               is set and cleared by software.</description>
               <bitOffset>26</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CTEIF7</name>
+              <name>CTEIF6</name>
               <description>Channel x transfer error clear This bit
               is set and cleared by software.</description>
               <bitOffset>27</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CGIF8</name>
+              <name>CGIF7</name>
               <description>Channel x global interrupt clear This
               bit is set and cleared by software.</description>
               <bitOffset>28</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CTCIF8</name>
+              <name>CTCIF7</name>
               <description>Channel x transfer complete clear This
               bit is set and cleared by software.</description>
               <bitOffset>29</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CHTIF8</name>
+              <name>CHTIF7</name>
               <description>Channel x half transfer clear This bit
               is set and cleared by software.</description>
               <bitOffset>30</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>CTEIF8</name>
+              <name>CTEIF7</name>
               <description>Channel x transfer error clear This bit
               is set and cleared by software.</description>
               <bitOffset>31</bitOffset>
@@ -1944,7 +1950,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>CCR1</name>
+          <name>C1CR</name>
           <displayName>CCR1</displayName>
           <description>DMA channel x configuration
           register</description>
@@ -2037,10 +2043,25 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitOffset>14</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
+            <field>
+              <name>DBM</name>
+              <description>double-buffer mode This bit must be set
+              only in memory-to-peripheral and peripheral-to-memory transfers</description>
+              <bitOffset>15</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>CT</name>
+              <description>current target memory of DMA transfer in
+              double-buffer mode This bit is toggled by hardware at
+              the end of each channel transfer in double-buffer mode</description>
+              <bitOffset>16</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
           </fields>
         </register>
         <register>
-          <name>CNDTR1</name>
+          <name>C1NDTR</name>
           <displayName>CNDTR1</displayName>
           <description>DMA channel x number of data
           register</description>
@@ -2069,7 +2090,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>CPAR1</name>
+          <name>C1PAR</name>
           <displayName>CPAR1</displayName>
           <description>This register must not be written when the
           channel is enabled.</description>
@@ -2093,7 +2114,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>CMAR1</name>
+          <name>C1MAR</name>
           <displayName>CMAR1</displayName>
           <description>This register must not be written when the
           channel is enabled.</description>
@@ -2117,7 +2138,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>CCR2</name>
+          <name>C2CR</name>
           <displayName>CCR2</displayName>
           <description>DMA channel x configuration
           register</description>
@@ -2210,10 +2231,25 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitOffset>14</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
+            <field>
+              <name>DBM</name>
+              <description>double-buffer mode This bit must be set
+              only in memory-to-peripheral and peripheral-to-memory transfers</description>
+              <bitOffset>15</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>CT</name>
+              <description>current target memory of DMA transfer in
+              double-buffer mode This bit is toggled by hardware at
+              the end of each channel transfer in double-buffer mode</description>
+              <bitOffset>16</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
           </fields>
         </register>
         <register>
-          <name>CNDTR2</name>
+          <name>C2NDTR</name>
           <displayName>CNDTR2</displayName>
           <description>DMA channel x number of data
           register</description>
@@ -2242,7 +2278,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>CPAR2</name>
+          <name>C2PAR</name>
           <displayName>CPAR2</displayName>
           <description>This register must not be written when the
           channel is enabled.</description>
@@ -2266,7 +2302,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>CMAR2</name>
+          <name>C2MAR</name>
           <displayName>CMAR2</displayName>
           <description>This register must not be written when the
           channel is enabled.</description>
@@ -2290,7 +2326,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>CCR3</name>
+          <name>C3CR</name>
           <displayName>CCR3</displayName>
           <description>DMA channel x configuration
           register</description>
@@ -2383,10 +2419,25 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitOffset>14</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
+            <field>
+              <name>DBM</name>
+              <description>double-buffer mode This bit must be set
+              only in memory-to-peripheral and peripheral-to-memory transfers</description>
+              <bitOffset>15</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>CT</name>
+              <description>current target memory of DMA transfer in
+              double-buffer mode This bit is toggled by hardware at
+              the end of each channel transfer in double-buffer mode</description>
+              <bitOffset>16</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
           </fields>
         </register>
         <register>
-          <name>CNDTR3</name>
+          <name>C3NDTR</name>
           <displayName>CNDTR3</displayName>
           <description>DMA channel x number of data
           register</description>
@@ -2415,7 +2466,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>CPAR3</name>
+          <name>C3PAR</name>
           <displayName>CPAR3</displayName>
           <description>This register must not be written when the
           channel is enabled.</description>
@@ -2439,7 +2490,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>CMAR3</name>
+          <name>C3MAR</name>
           <displayName>CMAR3</displayName>
           <description>This register must not be written when the
           channel is enabled.</description>
@@ -2463,7 +2514,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>CCR4</name>
+          <name>C4CR</name>
           <displayName>CCR4</displayName>
           <description>DMA channel x configuration
           register</description>
@@ -2556,10 +2607,25 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitOffset>14</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
+            <field>
+              <name>DBM</name>
+              <description>double-buffer mode This bit must be set
+              only in memory-to-peripheral and peripheral-to-memory transfers</description>
+              <bitOffset>15</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>CT</name>
+              <description>current target memory of DMA transfer in
+              double-buffer mode This bit is toggled by hardware at
+              the end of each channel transfer in double-buffer mode</description>
+              <bitOffset>16</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
           </fields>
         </register>
         <register>
-          <name>CNDTR4</name>
+          <name>C4NDTR</name>
           <displayName>CNDTR4</displayName>
           <description>DMA channel x number of data
           register</description>
@@ -2588,7 +2654,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>CPAR4</name>
+          <name>C4PAR</name>
           <displayName>CPAR4</displayName>
           <description>This register must not be written when the
           channel is enabled.</description>
@@ -2612,7 +2678,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>CMAR4</name>
+          <name>C4MAR</name>
           <displayName>CMAR4</displayName>
           <description>This register must not be written when the
           channel is enabled.</description>
@@ -2636,7 +2702,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>CCR5</name>
+          <name>C5CR</name>
           <displayName>CCR5</displayName>
           <description>DMA channel x configuration
           register</description>
@@ -2729,10 +2795,25 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitOffset>14</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
+            <field>
+              <name>DBM</name>
+              <description>double-buffer mode This bit must be set
+              only in memory-to-peripheral and peripheral-to-memory transfers</description>
+              <bitOffset>15</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>CT</name>
+              <description>current target memory of DMA transfer in
+              double-buffer mode This bit is toggled by hardware at
+              the end of each channel transfer in double-buffer mode</description>
+              <bitOffset>16</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
           </fields>
         </register>
         <register>
-          <name>CNDTR5</name>
+          <name>C5NDTR</name>
           <displayName>CNDTR5</displayName>
           <description>DMA channel x number of data
           register</description>
@@ -2761,7 +2842,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>CPAR5</name>
+          <name>C5PAR</name>
           <displayName>CPAR5</displayName>
           <description>This register must not be written when the
           channel is enabled.</description>
@@ -2785,7 +2866,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>CMAR5</name>
+          <name>C5MAR</name>
           <displayName>CMAR5</displayName>
           <description>This register must not be written when the
           channel is enabled.</description>
@@ -2809,7 +2890,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>CCR6</name>
+          <name>C6CR</name>
           <displayName>CCR6</displayName>
           <description>DMA channel x configuration
           register</description>
@@ -2902,10 +2983,25 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitOffset>14</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
+            <field>
+              <name>DBM</name>
+              <description>double-buffer mode This bit must be set
+              only in memory-to-peripheral and peripheral-to-memory transfers</description>
+              <bitOffset>15</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>CT</name>
+              <description>current target memory of DMA transfer in
+              double-buffer mode This bit is toggled by hardware at
+              the end of each channel transfer in double-buffer mode</description>
+              <bitOffset>16</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
           </fields>
         </register>
         <register>
-          <name>CNDTR6</name>
+          <name>C6NDTR</name>
           <displayName>CNDTR6</displayName>
           <description>DMA channel x number of data
           register</description>
@@ -2934,7 +3030,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>CPAR6</name>
+          <name>C6PAR</name>
           <displayName>CPAR6</displayName>
           <description>This register must not be written when the
           channel is enabled.</description>
@@ -2958,7 +3054,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>CMAR6</name>
+          <name>C6MAR</name>
           <displayName>CMAR6</displayName>
           <description>This register must not be written when the
           channel is enabled.</description>
@@ -2982,7 +3078,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>CCR7</name>
+          <name>C7CR</name>
           <displayName>CCR7</displayName>
           <description>DMA channel x configuration
           register</description>
@@ -3075,10 +3171,25 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitOffset>14</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
+            <field>
+              <name>DBM</name>
+              <description>double-buffer mode This bit must be set
+              only in memory-to-peripheral and peripheral-to-memory transfers</description>
+              <bitOffset>15</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>CT</name>
+              <description>current target memory of DMA transfer in
+              double-buffer mode This bit is toggled by hardware at
+              the end of each channel transfer in double-buffer mode</description>
+              <bitOffset>16</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
           </fields>
         </register>
         <register>
-          <name>CNDTR7</name>
+          <name>C7NDTR</name>
           <displayName>CNDTR7</displayName>
           <description>DMA channel x number of data
           register</description>
@@ -3107,7 +3218,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>CPAR7</name>
+          <name>C7PAR</name>
           <displayName>CPAR7</displayName>
           <description>This register must not be written when the
           channel is enabled.</description>
@@ -3131,7 +3242,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>CMAR7</name>
+          <name>C7MAR</name>
           <displayName>CMAR7</displayName>
           <description>This register must not be written when the
           channel is enabled.</description>
@@ -3155,7 +3266,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>CCR8</name>
+          <name>C8CR</name>
           <displayName>CCR8</displayName>
           <description>DMA channel x configuration
           register</description>
@@ -3248,10 +3359,25 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
               <bitOffset>14</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
+            <field>
+              <name>DBM</name>
+              <description>double-buffer mode This bit must be set
+              only in memory-to-peripheral and peripheral-to-memory transfers</description>
+              <bitOffset>15</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>CT</name>
+              <description>current target memory of DMA transfer in
+              double-buffer mode This bit is toggled by hardware at
+              the end of each channel transfer in double-buffer mode</description>
+              <bitOffset>16</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
           </fields>
         </register>
         <register>
-          <name>CNDTR8</name>
+          <name>C8NDTR</name>
           <displayName>CNDTR8</displayName>
           <description>DMA channel x number of data
           register</description>
@@ -3280,7 +3406,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>CPAR8</name>
+          <name>C8PAR</name>
           <displayName>CPAR8</displayName>
           <description>This register must not be written when the
           channel is enabled.</description>
@@ -3304,7 +3430,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>CMAR8</name>
+          <name>C8MAR</name>
           <displayName>CMAR8</displayName>
           <description>This register must not be written when the
           channel is enabled.</description>
@@ -10878,7 +11004,7 @@ Writing 1 in each bit clears the corresponding overrun flag SOFx in the DMAMUX_C
           <resetValue>0x00000000</resetValue>
           <fields>
             <field>
-              <name>SADD0</name>
+              <name>SADD</name>
               <description>Slave address bit 0 (master mode) In
               7-bit addressing mode (ADD10 = 0): This bit is dont
               care In 10-bit addressing mode (ADD10 = 1): This bit
@@ -10886,115 +11012,7 @@ Writing 1 in each bit clears the corresponding overrun flag SOFx in the DMAMUX_C
               be sent Note: Changing these bits when the START bit
               is set is not allowed.</description>
               <bitOffset>0</bitOffset>
-              <bitWidth>1</bitWidth>
-            </field>
-            <field>
-              <name>SADD1</name>
-              <description>Slave address bit 7:1 (master mode) In
-              7-bit addressing mode (ADD10 = 0): These bits should
-              be written with the 7-bit slave address to be sent In
-              10-bit addressing mode (ADD10 = 1): These bits should
-              be written with bits 7:1 of the slave address to be
-              sent. Note: Changing these bits when the START bit is
-              set is not allowed.</description>
-              <bitOffset>1</bitOffset>
-              <bitWidth>1</bitWidth>
-            </field>
-            <field>
-              <name>SADD2</name>
-              <description>Slave address bit 7:1 (master mode) In
-              7-bit addressing mode (ADD10 = 0): These bits should
-              be written with the 7-bit slave address to be sent In
-              10-bit addressing mode (ADD10 = 1): These bits should
-              be written with bits 7:1 of the slave address to be
-              sent. Note: Changing these bits when the START bit is
-              set is not allowed.</description>
-              <bitOffset>2</bitOffset>
-              <bitWidth>1</bitWidth>
-            </field>
-            <field>
-              <name>SADD3</name>
-              <description>Slave address bit 7:1 (master mode) In
-              7-bit addressing mode (ADD10 = 0): These bits should
-              be written with the 7-bit slave address to be sent In
-              10-bit addressing mode (ADD10 = 1): These bits should
-              be written with bits 7:1 of the slave address to be
-              sent. Note: Changing these bits when the START bit is
-              set is not allowed.</description>
-              <bitOffset>3</bitOffset>
-              <bitWidth>1</bitWidth>
-            </field>
-            <field>
-              <name>SADD4</name>
-              <description>Slave address bit 7:1 (master mode) In
-              7-bit addressing mode (ADD10 = 0): These bits should
-              be written with the 7-bit slave address to be sent In
-              10-bit addressing mode (ADD10 = 1): These bits should
-              be written with bits 7:1 of the slave address to be
-              sent. Note: Changing these bits when the START bit is
-              set is not allowed.</description>
-              <bitOffset>4</bitOffset>
-              <bitWidth>1</bitWidth>
-            </field>
-            <field>
-              <name>SADD5</name>
-              <description>Slave address bit 7:1 (master mode) In
-              7-bit addressing mode (ADD10 = 0): These bits should
-              be written with the 7-bit slave address to be sent In
-              10-bit addressing mode (ADD10 = 1): These bits should
-              be written with bits 7:1 of the slave address to be
-              sent. Note: Changing these bits when the START bit is
-              set is not allowed.</description>
-              <bitOffset>5</bitOffset>
-              <bitWidth>1</bitWidth>
-            </field>
-            <field>
-              <name>SADD6</name>
-              <description>Slave address bit 7:1 (master mode) In
-              7-bit addressing mode (ADD10 = 0): These bits should
-              be written with the 7-bit slave address to be sent In
-              10-bit addressing mode (ADD10 = 1): These bits should
-              be written with bits 7:1 of the slave address to be
-              sent. Note: Changing these bits when the START bit is
-              set is not allowed.</description>
-              <bitOffset>6</bitOffset>
-              <bitWidth>1</bitWidth>
-            </field>
-            <field>
-              <name>SADD7</name>
-              <description>Slave address bit 7:1 (master mode) In
-              7-bit addressing mode (ADD10 = 0): These bits should
-              be written with the 7-bit slave address to be sent In
-              10-bit addressing mode (ADD10 = 1): These bits should
-              be written with bits 7:1 of the slave address to be
-              sent. Note: Changing these bits when the START bit is
-              set is not allowed.</description>
-              <bitOffset>7</bitOffset>
-              <bitWidth>1</bitWidth>
-            </field>
-            <field>
-              <name>SADD8</name>
-              <description>Slave address bit 9:8 (master mode) In
-              7-bit addressing mode (ADD10 = 0): These bits are
-              dont care In 10-bit addressing mode (ADD10 = 1):
-              These bits should be written with bits 9:8 of the
-              slave address to be sent Note: Changing these bits
-              when the START bit is set is not
-              allowed.</description>
-              <bitOffset>8</bitOffset>
-              <bitWidth>1</bitWidth>
-            </field>
-            <field>
-              <name>SADD9</name>
-              <description>Slave address bit 9:8 (master mode) In
-              7-bit addressing mode (ADD10 = 0): These bits are
-              dont care In 10-bit addressing mode (ADD10 = 1):
-              These bits should be written with bits 9:8 of the
-              slave address to be sent Note: Changing these bits
-              when the START bit is set is not
-              allowed.</description>
-              <bitOffset>9</bitOffset>
-              <bitWidth>1</bitWidth>
+              <bitWidth>10</bitWidth>
             </field>
             <field>
               <name>RD_WRN</name>
@@ -31336,6 +31354,20 @@ Writing 1 in each bit clears the corresponding overrun flag SOFx in the DMAMUX_C
               <access>read-write</access>
             </field>
             <field>
+              <name>SDEXTHP</name>
+              <description>SMPS step-down converter forced ON and in High Power MR mode.</description>
+              <bitOffset>3</bitOffset>
+              <bitWidth>1</bitWidth>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>SDLEVEL</name>
+              <description>SMPS step-down converter voltage output level selection </description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>2</bitWidth>
+              <access>read-write</access>
+            </field>
+            <field>
               <name>VBE</name>
               <description>VBAT charging enable</description>
               <bitOffset>8</bitOffset>
@@ -31805,7 +31837,7 @@ Writing 1 in each bit clears the corresponding overrun flag SOFx in the DMAMUX_C
               associated IOs</description>
               <bitOffset>16</bitOffset>
               <bitWidth>1</bitWidth>
-              <access>read-only</access>
+              <access>read-write</access>
             </field>
             <field>
               <name>TCRCI</name>
@@ -31859,7 +31891,7 @@ Writing 1 in each bit clears the corresponding overrun flag SOFx in the DMAMUX_C
               <description>Master transfer start</description>
               <bitOffset>9</bitOffset>
               <bitWidth>1</bitWidth>
-              <access>read-only</access>
+              <access>read-write</access>
             </field>
             <field>
               <name>MASRX</name>
@@ -36829,6 +36861,12 @@ Writing 1 in each bit clears the corresponding overrun flag SOFx in the DMAMUX_C
           <resetValue>0x00000000</resetValue>
           <fields>
             <field>
+              <name>LDORDY</name>
+              <description>ADC LDO output voltage ready bit</description>
+              <bitOffset>12</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
               <name>JQOVF</name>
               <description>ADC group injected contexts queue
               overflow flag</description>
@@ -37319,7 +37357,7 @@ Writing 1 in each bit clears the corresponding overrun flag SOFx in the DMAMUX_C
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>OSR</name>
+              <name>OSVR</name>
               <description>Oversampling ratio</description>
               <bitOffset>16</bitOffset>
               <bitWidth>10</bitWidth>
@@ -37402,6 +37440,13 @@ Writing 1 in each bit clears the corresponding overrun flag SOFx in the DMAMUX_C
               <description>ADC channel 1 sampling time
               selection</description>
               <bitOffset>3</bitOffset>
+              <bitWidth>3</bitWidth>
+            </field>
+            <field>
+              <name>SMP0</name>
+              <description>ADC channel 0 sampling time
+              selection</description>
+              <bitOffset>0</bitOffset>
               <bitWidth>3</bitWidth>
             </field>
           </fields>
@@ -37564,8 +37609,8 @@ Writing 1 in each bit clears the corresponding overrun flag SOFx in the DMAMUX_C
               <bitWidth>5</bitWidth>
             </field>
             <field>
-              <name>L3</name>
-              <description>L3</description>
+              <name>L</name>
+              <description>Regular channel sequence length</description>
               <bitOffset>0</bitOffset>
               <bitWidth>4</bitWidth>
             </field>
@@ -38181,7 +38226,7 @@ Writing 1 in each bit clears the corresponding overrun flag SOFx in the DMAMUX_C
     <peripheral>
       <name>ADC3_Common</name>
       <description>Analog-to-Digital Converter</description>
-      <groupName>ADC</groupName>
+      <groupName>ADC_Common</groupName>
       <baseAddress>0x58026300</baseAddress>
       <addressBlock>
         <offset>0x0</offset>
@@ -98931,7 +98976,7 @@ Minimum value is 16</description>
               <bitWidth>1</bitWidth>
             </field>
             <field>
-              <name>OC4M_4</name>
+              <name>OC4M_3</name>
               <description>Output Compare 4 mode - bit
               3</description>
               <bitOffset>24</bitOffset>

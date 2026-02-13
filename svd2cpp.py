@@ -1,4 +1,4 @@
-_SVD2CPP_VERSION = '1.3'
+_SVD2CPP_VERSION = '1.4'
 
 def convert(svd_file, ignore_cluster_regex):
     import svd_cleanup
@@ -105,10 +105,10 @@ def generate(device, groups, interrupts):
         generated_file = os.path.join(generate_dir, os.path.basename(template_file.removesuffix('.jinja').replace('device', device['name'].lower())))
         print(f'Generating {generated_file}...')
         print(f'Template file: {template_file}')
-        rendered = env.get_template(template_file).render(parameters)
+        rendered = env.get_template(template_file.replace(os.path.sep, '/')).render(parameters)
         with open(generated_file, 'w') as file:
             file.write(rendered)
-    
+
     # Generate group-specific template files
     for template_file in os.listdir(os.path.join(template_dir, "group")):
         template_file = os.path.join("group", template_file)
@@ -118,8 +118,8 @@ def generate(device, groups, interrupts):
             generate_base_name = f'{device['name'].lower()}-{os.path.basename(template_file.removesuffix('.jinja').replace('group', group_name.lower()))}'
             generated_file = os.path.join(generate_dir, generate_base_name)
             print(f'Generating {generated_file}...')
-            rendered = env.get_template(template_file).render({**parameters, 'group': group})
-            
+            rendered = env.get_template(template_file.replace(os.path.sep, '/')).render({**parameters, 'group': group})
+
             with open(generated_file, 'w') as file:
                 file.write(rendered)
 
@@ -150,7 +150,7 @@ def convert_entries(device_names, group_names):
 
     # Detect which common entry files have to be generated
     filenames = [filename for filename in os.listdir(os.path.join(template_dir, "common")) if os.path.basename(filename).startswith('device')]
-    
+
     generate_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'generated')
     template_file = os.path.join("entry", "entry.h.jinja")
     for filename in filenames:
@@ -162,7 +162,7 @@ def convert_entries(device_names, group_names):
         parameters['include_file'] = base_file
 
         print(f'Generating entry common {generated_file}...')
-        rendered = env.get_template(template_file).render(parameters)
+        rendered = env.get_template(template_file.replace(os.path.sep, '/')).render(parameters)
         with open(generated_file, 'w') as file:
                 file.write(rendered)
 
@@ -183,8 +183,8 @@ def convert_entries(device_names, group_names):
         parameters['include_file'] = base_file
 
         print(f'Generating entry group {generated_file}...')
-        
-        rendered = env.get_template(template_file).render(parameters)
+
+        rendered = env.get_template(template_file.replace(os.path.sep, '/')).render(parameters)
         with open(generated_file, 'w') as file:
                 file.write(rendered)
 
