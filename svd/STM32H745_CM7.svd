@@ -33,6 +33,7 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
   8. Give ADC*_Common its own group
   9. Rename BDMA register names so that they can be grouped in an array + fixes in BDMA
   10. Add PWR_CR3 missing fields (SDEXTHP, SDLEVEL)
+  11. Add BDMA C[*].MAR1 field
   </description>
   <cpu>
     <name>CM7</name>
@@ -2114,11 +2115,35 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>C1MAR</name>
+          <name>C1MAR1</name>
           <displayName>CMAR1</displayName>
           <description>This register must not be written when the
           channel is enabled.</description>
           <addressOffset>0x14</addressOffset>
+          <size>0x20</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>MA</name>
+              <description>Memory address Base address of the
+              memory area from/to which the data will be
+              read/written. When MSIZE is 01 (16-bit), the MA[0]
+              bit is ignored. Access is automatically aligned to a
+              half-word address. When MSIZE is 10 (32-bit), MA[1:0]
+              are ignored. Access is automatically aligned to a
+              word address.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>C1MAR2</name>
+          <displayName>CMAR2</displayName>
+          <description>This register must not be written when the
+          channel is enabled.</description>
+          <addressOffset>0x18</addressOffset>
           <size>0x20</size>
           <access>read-write</access>
           <resetValue>0x00000000</resetValue>
@@ -2302,11 +2327,35 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>C2MAR</name>
-          <displayName>CMAR2</displayName>
+          <name>C2MAR1</name>
+          <displayName>CMAR1</displayName>
           <description>This register must not be written when the
           channel is enabled.</description>
           <addressOffset>0x28</addressOffset>
+          <size>0x20</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>MA</name>
+              <description>Memory address Base address of the
+              memory area from/to which the data will be
+              read/written. When MSIZE is 01 (16-bit), the MA[0]
+              bit is ignored. Access is automatically aligned to a
+              half-word address. When MSIZE is 10 (32-bit), MA[1:0]
+              are ignored. Access is automatically aligned to a
+              word address.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>C2MAR2</name>
+          <displayName>CMAR2</displayName>
+          <description>This register must not be written when the
+          channel is enabled.</description>
+          <addressOffset>0x2C</addressOffset>
           <size>0x20</size>
           <access>read-write</access>
           <resetValue>0x00000000</resetValue>
@@ -2490,11 +2539,35 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>C3MAR</name>
-          <displayName>CMAR3</displayName>
+          <name>C3MAR1</name>
+          <displayName>CMAR1</displayName>
           <description>This register must not be written when the
           channel is enabled.</description>
           <addressOffset>0x3C</addressOffset>
+          <size>0x20</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>MA</name>
+              <description>Memory address Base address of the
+              memory area from/to which the data will be
+              read/written. When MSIZE is 01 (16-bit), the MA[0]
+              bit is ignored. Access is automatically aligned to a
+              half-word address. When MSIZE is 10 (32-bit), MA[1:0]
+              are ignored. Access is automatically aligned to a
+              word address.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>C3MAR2</name>
+          <displayName>CMAR2</displayName>
+          <description>This register must not be written when the
+          channel is enabled.</description>
+          <addressOffset>0x40</addressOffset>
           <size>0x20</size>
           <access>read-write</access>
           <resetValue>0x00000000</resetValue>
@@ -2678,11 +2751,35 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>C4MAR</name>
-          <displayName>CMAR4</displayName>
+          <name>C4MAR1</name>
+          <displayName>CMAR1</displayName>
           <description>This register must not be written when the
           channel is enabled.</description>
           <addressOffset>0x50</addressOffset>
+          <size>0x20</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>MA</name>
+              <description>Memory address Base address of the
+              memory area from/to which the data will be
+              read/written. When MSIZE is 01 (16-bit), the MA[0]
+              bit is ignored. Access is automatically aligned to a
+              half-word address. When MSIZE is 10 (32-bit), MA[1:0]
+              are ignored. Access is automatically aligned to a
+              word address.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>C4MAR2</name>
+          <displayName>CMAR2</displayName>
+          <description>This register must not be written when the
+          channel is enabled.</description>
+          <addressOffset>0x54</addressOffset>
           <size>0x20</size>
           <access>read-write</access>
           <resetValue>0x00000000</resetValue>
@@ -2866,11 +2963,35 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>C5MAR</name>
-          <displayName>CMAR5</displayName>
+          <name>C5MAR1</name>
+          <displayName>CMAR1</displayName>
           <description>This register must not be written when the
           channel is enabled.</description>
           <addressOffset>0x64</addressOffset>
+          <size>0x20</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>MA</name>
+              <description>Memory address Base address of the
+              memory area from/to which the data will be
+              read/written. When MSIZE is 01 (16-bit), the MA[0]
+              bit is ignored. Access is automatically aligned to a
+              half-word address. When MSIZE is 10 (32-bit), MA[1:0]
+              are ignored. Access is automatically aligned to a
+              word address.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>C5MAR2</name>
+          <displayName>CMAR2</displayName>
+          <description>This register must not be written when the
+          channel is enabled.</description>
+          <addressOffset>0x68</addressOffset>
           <size>0x20</size>
           <access>read-write</access>
           <resetValue>0x00000000</resetValue>
@@ -3054,11 +3175,35 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>C6MAR</name>
-          <displayName>CMAR6</displayName>
+          <name>C6MAR1</name>
+          <displayName>CMAR16</displayName>
           <description>This register must not be written when the
           channel is enabled.</description>
           <addressOffset>0x78</addressOffset>
+          <size>0x20</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>MA</name>
+              <description>Memory address Base address of the
+              memory area from/to which the data will be
+              read/written. When MSIZE is 01 (16-bit), the MA[0]
+              bit is ignored. Access is automatically aligned to a
+              half-word address. When MSIZE is 10 (32-bit), MA[1:0]
+              are ignored. Access is automatically aligned to a
+              word address.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>C6MAR2</name>
+          <displayName>CMAR2</displayName>
+          <description>This register must not be written when the
+          channel is enabled.</description>
+          <addressOffset>0x7C</addressOffset>
           <size>0x20</size>
           <access>read-write</access>
           <resetValue>0x00000000</resetValue>
@@ -3242,11 +3387,35 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>C7MAR</name>
-          <displayName>CMAR7</displayName>
+          <name>C7MAR1</name>
+          <displayName>CMAR1</displayName>
           <description>This register must not be written when the
           channel is enabled.</description>
           <addressOffset>0x8C</addressOffset>
+          <size>0x20</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>MA</name>
+              <description>Memory address Base address of the
+              memory area from/to which the data will be
+              read/written. When MSIZE is 01 (16-bit), the MA[0]
+              bit is ignored. Access is automatically aligned to a
+              half-word address. When MSIZE is 10 (32-bit), MA[1:0]
+              are ignored. Access is automatically aligned to a
+              word address.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>C7MAR2</name>
+          <displayName>CMAR2</displayName>
+          <description>This register must not be written when the
+          channel is enabled.</description>
+          <addressOffset>0x90</addressOffset>
           <size>0x20</size>
           <access>read-write</access>
           <resetValue>0x00000000</resetValue>
@@ -3430,11 +3599,35 @@ xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_1.xsd">
           </fields>
         </register>
         <register>
-          <name>C8MAR</name>
-          <displayName>CMAR8</displayName>
+          <name>C8MAR1</name>
+          <displayName>CMAR1</displayName>
           <description>This register must not be written when the
           channel is enabled.</description>
           <addressOffset>0xA0</addressOffset>
+          <size>0x20</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>MA</name>
+              <description>Memory address Base address of the
+              memory area from/to which the data will be
+              read/written. When MSIZE is 01 (16-bit), the MA[0]
+              bit is ignored. Access is automatically aligned to a
+              half-word address. When MSIZE is 10 (32-bit), MA[1:0]
+              are ignored. Access is automatically aligned to a
+              word address.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>C8MAR2</name>
+          <displayName>CMAR2</displayName>
+          <description>This register must not be written when the
+          channel is enabled.</description>
+          <addressOffset>0xA4</addressOffset>
           <size>0x20</size>
           <access>read-write</access>
           <resetValue>0x00000000</resetValue>
