@@ -66,7 +66,7 @@ struct BaseField {
                 "bfi     %[res], %[set], %[off], %[len]"
 #endif
                 : [res]"=r" (val_)
-                :       "r" (val_),
+                :       "0" (val_),
                   [set] "r" (val_set), [off]"i" (Offset), [len]"i" (Width)
             );
         }
